@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import {
   updateScene, appendScene, deleteScene,
-  batchUpdateScenes, updateSummaryRow,
+  batchUpdateScenes, batchDeleteScenes, updateSummaryRow,
 } from '../services/sheetsService'
 import type { SceneRow } from '../types'
 import {
@@ -310,6 +310,29 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
     }
   }
 
+  async function handleBatchDelete() {
+    const targets = scenes
+      .map((r, i) => ({ row: r, idx: i }))
+      .filter(x => selectedScenes.has(x.row.scene))
+    if (targets.length === 0) return
+    if (!confirm(`確定刪除 ${targets.length} 個場次？此操作無法復原。`)) return
+    setSaving(true)
+    try {
+      const rowIndices = targets.map(t => t.idx)
+      await batchDeleteScenes(episode, rowIndices, token)
+      const removed = new Set(targets.map(t => t.row.scene))
+      const updated = scenes.filter(r => !removed.has(r.scene))
+      if (editRow !== null && removed.has(scenes[editRow].scene)) setEditRow(null)
+      cache.setEpisodeScenes(episode, () => updated)
+      syncSummary(updated)
+      setSelectedScenes(new Set())
+    } catch (e: unknown) {
+      alert('批次刪除失敗：' + (e instanceof Error ? e.message : String(e)))
+    } finally {
+      setSaving(false)
+    }
+  }
+
   const stats = computeEpisodeStats(scenes)
   const roughcutPct = Math.round(stats.roughcutPct * 100)
   const finecutPct = Math.round(stats.finecutPct * 100)
@@ -487,28 +510,37 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
                   )}
                 </div>
                 {selectedCount > 0 && (
-                  <div style={s.batchWrap} ref={batchMenuRef}>
+                  <>
+                    <div style={s.batchWrap} ref={batchMenuRef}>
+                      <button
+                        style={s.batchBtn}
+                        onClick={() => setShowBatchMenu(v => !v)}
+                        disabled={saving}
+                      >
+                        批次修改狀態（{selectedCount}）
+                      </button>
+                      {showBatchMenu && (
+                        <div style={s.batchMenu}>
+                          {BATCH_ACTIONS.map(a => (
+                            <button
+                              key={a.label}
+                              style={s.batchMenuItem}
+                              onClick={() => handleBatchStatus(a.value)}
+                            >
+                              {a.label}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                     <button
-                      style={s.batchBtn}
-                      onClick={() => setShowBatchMenu(v => !v)}
+                      style={s.batchDeleteBtn}
+                      onClick={handleBatchDelete}
                       disabled={saving}
                     >
-                      批次修改狀態（{selectedCount}）
+                      批次刪除（{selectedCount}）
                     </button>
-                    {showBatchMenu && (
-                      <div style={s.batchMenu}>
-                        {BATCH_ACTIONS.map(a => (
-                          <button
-                            key={a.label}
-                            style={s.batchMenuItem}
-                            onClick={() => handleBatchStatus(a.value)}
-                          >
-                            {a.label}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                  </div>
+                  </>
                 )}
               </div>
               <div style={s.actions}>
@@ -864,6 +896,10 @@ const s: Record<string, React.CSSProperties> = {
   batchBtn: {
     padding: '6px 14px', background: '#1e3a5f', color: '#60a5fa',
     border: '1px solid #2a5082', borderRadius: 20, fontSize: 12, cursor: 'pointer',
+  },
+  batchDeleteBtn: {
+    padding: '6px 14px', marginLeft: 6, background: 'transparent', color: '#f87171',
+    border: '1px solid #f87171', borderRadius: 20, fontSize: 12, cursor: 'pointer',
   },
   batchMenu: {
     position: 'absolute', top: 'calc(100% + 4px)', left: 0, zIndex: 50,

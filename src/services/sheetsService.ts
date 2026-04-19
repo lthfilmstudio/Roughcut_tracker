@@ -237,3 +237,24 @@ export async function deleteScene(ep: string, rowIndex: number, token: string) {
   if (!res.ok) throw new Error(`Sheets API ${res.status}`)
   return res.json()
 }
+
+export async function batchDeleteScenes(ep: string, rowIndices: number[], token: string) {
+  if (!rowIndices.length) return
+  const sheetId = await getSheetId(ep, token)
+  const sorted = [...rowIndices].sort((a, b) => b - a)
+  const requests = sorted.map(rowIndex => {
+    const startIndex = rowIndex + 1
+    return {
+      deleteDimension: {
+        range: { sheetId, dimension: 'ROWS', startIndex, endIndex: startIndex + 1 },
+      },
+    }
+  })
+  const res = await fetch(`${BASE}:batchUpdate`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ requests }),
+  })
+  if (!res.ok) throw new Error(`Sheets API ${res.status}`)
+  return res.json()
+}
