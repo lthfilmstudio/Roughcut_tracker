@@ -6,13 +6,16 @@ import DashboardExportMD from './DashboardExportMD'
 import DashboardExportCSV from './DashboardExportCSV'
 import ErrorView from './ErrorView'
 import ExportPDFModal from './ExportPDFModal'
-import { SHOW_NAME, STUDIO_NAME } from '../config/sheets'
+import { STUDIO_NAME } from '../config/sheets'
+import { projectTitle } from '../config/projectConfig'
+import { useProject } from '../contexts/ProjectContext'
 
 interface Props {
   token: string
   cache: EpisodesCache
   onSelectEpisode: (ep: string) => void
   onLogout: () => void
+  logoutLabel?: string
 }
 
 interface EpisodeView {
@@ -54,7 +57,8 @@ function buildHideCSS(opts: Record<string, boolean>): string {
   return parts.length > 0 ? `@media print { ${parts.join(' ')} }` : ''
 }
 
-export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
+export default function Dashboard({ cache, onSelectEpisode, onLogout, logoutLabel = '登出' }: Props) {
+  const { project } = useProject()
   const [hoveredEp, setHoveredEp] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const [showExportMD, setShowExportMD] = useState(false)
@@ -100,9 +104,9 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
       <nav style={s.nav} className="no-print">
         <div style={s.navTitleBox}>
           <span style={s.navTitle}>Roughcut Tracker</span>
-          <span style={s.navSub}>劇集《{SHOW_NAME}》</span>
+          <span style={s.navSub}>{projectTitle(project)}</span>
         </div>
-        <button style={s.logoutBtn} onClick={onLogout}>登出</button>
+        <button style={s.logoutBtn} onClick={onLogout}>{logoutLabel}</button>
       </nav>
 
       <main style={s.main}>
@@ -117,7 +121,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
                 <span className="print-studio">{STUDIO_NAME}</span>
                 <span className="print-meta">列印日期：{printDate}</span>
               </div>
-              <h1 className="print-title">劇集《{SHOW_NAME}》剪輯進度報告</h1>
+              <h1 className="print-title">{projectTitle(project)}剪輯進度報告</h1>
             </div>
 
             {/* 列印用簡潔統計表 */}
@@ -293,7 +297,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
 
       {showExportMD && (
         <DashboardExportMD
-          showName={SHOW_NAME}
+          showName={project.name}
           eps={eps}
           totals={totals}
           globalRoughcutPct={globalRoughcutPct}
@@ -306,7 +310,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
 
       {showExportCSV && (
         <DashboardExportCSV
-          showName={SHOW_NAME}
+          showName={project.name}
           eps={eps}
           totals={totals}
           globalRoughcutPct={globalRoughcutPct}

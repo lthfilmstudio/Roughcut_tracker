@@ -1,9 +1,10 @@
+import { CURRENT_PROJECT } from './projectConfig'
+
 export const SHEETS_CONFIG = {
-  spreadsheetId: '1J5LdXoTVzf2xWE6YsjZ7Y1Wk6xOWLwTLHBi2ohkTeus',
+  spreadsheetId: CURRENT_PROJECT.sheetId,
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 }
 
-export const SHOW_NAME = '北城百畫帖'
 export const STUDIO_NAME = '原本那間剪輯工作室'
 
 export const OAUTH_CONFIG = {
