@@ -1,9 +1,7 @@
-import { useEffect, useState } from 'react'
-import {
-  fetchSummary, fetchEpisodesBatch, initializeSummary, batchUpdateSummary,
-} from '../services/sheetsService'
-import { secsToHMS, normalizeScene, computeEpisodeStats } from '../lib/stats'
+import { useMemo, useState } from 'react'
+import { secsToHMS, computeEpisodeStats } from '../lib/stats'
 import type { EpisodeStats } from '../lib/stats'
+import type { EpisodesCache } from '../hooks/useEpisodesCache'
 import DashboardExportMD from './DashboardExportMD'
 import DashboardExportCSV from './DashboardExportCSV'
 import ErrorView from './ErrorView'
@@ -12,6 +10,7 @@ const SHOW_NAME = '北城百畫帖'
 
 interface Props {
   token: string
+  cache: EpisodesCache
   onSelectEpisode: (ep: string) => void
   onLogout: () => void
 }
@@ -21,54 +20,21 @@ interface EpisodeView {
   stats: EpisodeStats
 }
 
-export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
-  const [eps, setEps] = useState<EpisodeView[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [initializing, setInitializing] = useState(false)
+export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
   const [hoveredEp, setHoveredEp] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const [showExportMD, setShowExportMD] = useState(false)
   const [showExportCSV, setShowExportCSV] = useState(false)
 
-  async function loadData() {
-    setLoading(true)
-    setError('')
-    try {
-      const summary = await fetchSummary(token)
-      const epIds = summary.map(s => s.episode.toLowerCase().replace(/\s+/g, ''))
-      const batch = await fetchEpisodesBatch(epIds, token)
-      const computed = summary.map((s, i) => {
-        const scenes = (batch[epIds[i]] ?? []).map(normalizeScene)
-        return { episode: s.episode, epId: epIds[i], stats: computeEpisodeStats(scenes) }
-      })
-      setEps(computed.map(c => ({ episode: c.episode, stats: c.stats })))
-      batchUpdateSummary(
-        computed.map(c => ({ ep: c.epId, stats: c.stats })),
-        token,
-      ).catch(() => {})
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setLoading(false)
-    }
-  }
+  const { scenes, loading, error } = cache
 
-  useEffect(() => { loadData() }, [token])
+  const eps = useMemo<EpisodeView[]>(() => {
+    if (!scenes) return []
+    return Object.keys(scenes)
+      .sort()
+      .map(ep => ({ episode: ep, stats: computeEpisodeStats(scenes[ep]) }))
+  }, [scenes])
 
-  async function handleInit() {
-    setInitializing(true)
-    try {
-      await initializeSummary(token)
-      await loadData()
-    } catch (e: unknown) {
-      setError(e instanceof Error ? e.message : String(e))
-    } finally {
-      setInitializing(false)
-    }
-  }
-
-  // 全劇合計（按相同邏輯）
   const totals = eps.reduce(
     (acc, e) => ({
       totalScenes: acc.totalScenes + e.stats.totalScenes,
@@ -102,15 +68,6 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
       <main style={s.main}>
         {loading && <p style={s.msg}>載入中⋯</p>}
         {error && <ErrorView error={error} />}
-
-        {!loading && !error && eps.length === 0 && (
-          <div style={s.emptyState}>
-            <p style={s.emptyText}>尚無資料</p>
-            <button style={s.initBtn} onClick={handleInit} disabled={initializing}>
-              {initializing ? '初始化中⋯' : '自動建立 ep01–ep12 資料列'}
-            </button>
-          </div>
-        )}
 
         {!loading && !error && eps.length > 0 && (
           <>
@@ -261,12 +218,6 @@ const s: Record<string, React.CSSProperties> = {
   },
   main: { padding: '24px 40px', maxWidth: 1400, margin: '0 auto' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 80 },
-  emptyState: { textAlign: 'center', marginTop: 100 },
-  emptyText: { color: 'var(--text-secondary)', marginBottom: 20 },
-  initBtn: {
-    padding: '12px 24px', background: 'var(--text-primary)', color: 'var(--bg)',
-    border: 'none', borderRadius: 8, fontWeight: 600,
-  },
   statGrid: {
     display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 20,
     alignItems: 'stretch',

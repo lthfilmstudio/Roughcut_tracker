@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import {
-  fetchEpisode, updateScene, appendScene, deleteScene,
+  updateScene, appendScene, deleteScene,
   batchUpdateScenes, updateSummaryRow,
 } from '../services/sheetsService'
 import type { SceneRow } from '../types'
@@ -8,6 +8,7 @@ import {
   secsToHMS, formatRoughcutLength, formatDate, normalizeScene, computeEpisodeStats,
 } from '../lib/stats'
 import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
+import type { EpisodesCache } from '../hooks/useEpisodesCache'
 import BatchImport from './BatchImport'
 import ExportMD from './ExportMD'
 import ExportCSV from './ExportCSV'
@@ -16,6 +17,7 @@ import ErrorView from './ErrorView'
 interface Props {
   episode: string
   token: string
+  cache: EpisodesCache
   onNavigate: (ep: string) => void
   onBack: () => void
 }
@@ -44,10 +46,7 @@ const FILTERS: { key: string; color?: string }[] = [
 
 const EMPTY_SCENE: SceneRow = { scene: '', roughcutLength: '', pages: '', roughcutDate: '', status: '', missingShots: '', notes: '' }
 
-export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Props) {
-  const [scenes, setScenes] = useState<SceneRow[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState('')
+export default function EpisodeDetail({ episode, token, cache, onNavigate, onBack }: Props) {
   const [editRow, setEditRow] = useState<number | null>(null)
   const [draft, setDraft] = useState<SceneRow | null>(null)
   const [saving, setSaving] = useState(false)
@@ -59,30 +58,15 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
   const [showExportCSV, setShowExportCSV] = useState(false)
   const tabScrollRef = useRef<HTMLDivElement>(null)
 
+  const scenes = cache.scenes?.[episode] ?? []
+  const loading = cache.loading && !cache.scenes
+  const error = cache.error
+
   useEffect(() => {
-    setLoading(true)
-    setError('')
     setEditRow(null)
     setShowAddRow(false)
     setFilter('全部')
-    fetchEpisode(episode, token)
-      .then(async data => {
-        const normalized = data.map(normalizeScene)
-        const sorted = sortScenes(normalized)
-        setScenes(sorted)
-        const orderChanged = scenesOrderChanged(normalized, sorted)
-        const normalizedChanged = normalized.some((n, i) => (
-          n.roughcutLength !== data[i].roughcutLength || n.roughcutDate !== data[i].roughcutDate
-        ))
-        if (orderChanged || normalizedChanged) {
-          const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
-          await batchUpdateScenes(episode, updates, token).catch(() => {})
-        }
-        await updateSummaryRow(episode, computeEpisodeStats(sorted), token).catch(() => {})
-      })
-      .catch(e => setError(e.message))
-      .finally(() => setLoading(false))
-  }, [episode, token])
+  }, [episode])
 
   function scrollTabs(dir: 'left' | 'right') {
     if (tabScrollRef.current) {
@@ -113,12 +97,12 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
       await updateScene(episode, i, cleaned, token)
       const replaced = scenes.map((r, idx) => idx === i ? cleaned : r)
       const sorted = sortScenes(replaced)
-      setScenes(sorted)
       setEditRow(null)
       if (scenesOrderChanged(replaced, sorted)) {
         const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
         await batchUpdateScenes(episode, updates, token).catch(() => {})
       }
+      cache.setEpisodeScenes(episode, () => sorted)
       syncSummary(sorted)
     } catch (e: unknown) {
       alert('儲存失敗：' + (e instanceof Error ? e.message : String(e)))
@@ -135,13 +119,13 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
       await appendScene(episode, cleaned, token)
       const appended = [...scenes, cleaned]
       const sorted = sortScenes(appended)
-      setScenes(sorted)
       setNewScene(EMPTY_SCENE)
       setShowAddRow(false)
       if (scenesOrderChanged(appended, sorted)) {
         const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
         await batchUpdateScenes(episode, updates, token).catch(() => {})
       }
+      cache.setEpisodeScenes(episode, () => sorted)
       syncSummary(sorted)
     } catch (e: unknown) {
       alert('新增失敗：' + (e instanceof Error ? e.message : String(e)))
@@ -161,8 +145,8 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     try {
       await deleteScene(episode, i, token)
       const updated = scenes.filter((_, idx) => idx !== i)
-      setScenes(updated)
       if (editRow === i) setEditRow(null)
+      cache.setEpisodeScenes(episode, () => updated)
       syncSummary(updated)
     } catch (e: unknown) {
       alert('刪除失敗：' + (e instanceof Error ? e.message : String(e)))
@@ -177,11 +161,11 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     }
     const appended = [...scenes, ...newScenes]
     const sorted = sortScenes(appended)
-    setScenes(sorted)
     if (scenesOrderChanged(appended, sorted)) {
       const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
       await batchUpdateScenes(episode, updates, token).catch(() => {})
     }
+    cache.setEpisodeScenes(episode, () => sorted)
     syncSummary(sorted)
   }
 

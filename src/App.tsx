@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { useAuth } from './hooks/useAuth'
+import { useEpisodesCache } from './hooks/useEpisodesCache'
 import LoginScreen from './components/LoginScreen'
 import Dashboard from './components/Dashboard'
 import EpisodeDetail from './components/EpisodeDetail'
@@ -16,6 +17,7 @@ export default function App() {
   )
   const [view, setView] = useState<View>({ page: 'dashboard' })
   const loginTriggered = useRef(false)
+  const cache = useEpisodesCache(accessToken)
 
   useEffect(() => {
     const isOAuthCallback = window.location.hash.includes('access_token')
@@ -51,6 +53,7 @@ export default function App() {
       <EpisodeDetail
         episode={view.ep}
         token={accessToken}
+        cache={cache}
         onNavigate={(ep) => setView({ page: 'episode', ep })}
         onBack={() => setView({ page: 'dashboard' })}
       />
@@ -60,6 +63,7 @@ export default function App() {
   return (
     <Dashboard
       token={accessToken}
+      cache={cache}
       onSelectEpisode={(ep) => setView({ page: 'episode', ep })}
       onLogout={handleLogout}
     />
