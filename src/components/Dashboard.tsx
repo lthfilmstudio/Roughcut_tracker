@@ -4,6 +4,10 @@ import {
 } from '../services/sheetsService'
 import { secsToHMS, normalizeScene, computeEpisodeStats } from '../lib/stats'
 import type { EpisodeStats } from '../lib/stats'
+import DashboardExportMD from './DashboardExportMD'
+import DashboardExportCSV from './DashboardExportCSV'
+
+const SHOW_NAME = '北城百畫帖'
 
 interface Props {
   token: string
@@ -23,6 +27,8 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
   const [initializing, setInitializing] = useState(false)
   const [hoveredEp, setHoveredEp] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
+  const [showExportMD, setShowExportMD] = useState(false)
+  const [showExportCSV, setShowExportCSV] = useState(false)
 
   async function loadData() {
     setLoading(true)
@@ -87,7 +93,7 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
       <nav style={s.nav}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
           <span style={s.navTitle}>Roughcut Tracker</span>
-          <span style={s.navSub}>劇集《北城百畫帖》</span>
+          <span style={s.navSub}>劇集《{SHOW_NAME}》</span>
         </div>
         <button style={s.logoutBtn} onClick={onLogout}>登出</button>
       </nav>
@@ -136,6 +142,12 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* 工具列 */}
+            <div style={s.toolbar}>
+              <button style={s.actionBtn} onClick={() => setShowExportMD(true)}>匯出 MD</button>
+              <button style={s.actionBtn} onClick={() => setShowExportCSV(true)}>匯出 CSV</button>
             </div>
 
             {/* 進度表格 */}
@@ -206,6 +218,30 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
           </>
         )}
       </main>
+
+      {showExportMD && (
+        <DashboardExportMD
+          showName={SHOW_NAME}
+          eps={eps}
+          totals={totals}
+          globalRoughcutPct={globalRoughcutPct}
+          globalFinecutPct={globalFinecutPct}
+          globalAvgPageDur={globalAvgPageDur}
+          onClose={() => setShowExportMD(false)}
+        />
+      )}
+
+      {showExportCSV && (
+        <DashboardExportCSV
+          showName={SHOW_NAME}
+          eps={eps}
+          totals={totals}
+          globalRoughcutPct={globalRoughcutPct}
+          globalFinecutPct={globalFinecutPct}
+          globalAvgPageDur={globalAvgPageDur}
+          onClose={() => setShowExportCSV(false)}
+        />
+      )}
     </div>
   )
 }
@@ -248,6 +284,13 @@ const s: Record<string, React.CSSProperties> = {
   statSubValue: { fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', lineHeight: 1 },
   barTrack: { background: '#2A2A2A', borderRadius: 2, height: 4, flex: 1, minWidth: 0, overflow: 'hidden' },
   barFill: { height: '100%', borderRadius: 2, transition: 'width 0.3s ease' },
+  toolbar: {
+    display: 'flex', justifyContent: 'flex-end', gap: 8, marginBottom: 12,
+  },
+  actionBtn: {
+    padding: '7px 14px', background: 'transparent', color: 'var(--text-secondary)',
+    border: '1px solid var(--border)', borderRadius: 6, fontSize: 13,
+  },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {
