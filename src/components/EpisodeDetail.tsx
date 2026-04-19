@@ -7,6 +7,7 @@ import type { SceneRow } from '../types'
 import {
   secsToHMS, formatRoughcutLength, formatDate, normalizeScene, computeEpisodeStats,
 } from '../lib/stats'
+import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
 import BatchImport from './BatchImport'
 import ExportMD from './ExportMD'
 import ExportCSV from './ExportCSV'
@@ -67,18 +68,17 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     fetchEpisode(episode, token)
       .then(async data => {
         const normalized = data.map(normalizeScene)
-        setScenes(normalized)
-        const dirty = normalized
-          .map((n, i) => (
-            n.roughcutLength !== data[i].roughcutLength || n.roughcutDate !== data[i].roughcutDate
-              ? { rowIndex: i, scene: n }
-              : null
-          ))
-          .filter((x): x is { rowIndex: number; scene: SceneRow } => x !== null)
-        if (dirty.length > 0) {
-          await batchUpdateScenes(episode, dirty, token).catch(() => {})
+        const sorted = sortScenes(normalized)
+        setScenes(sorted)
+        const orderChanged = scenesOrderChanged(normalized, sorted)
+        const normalizedChanged = normalized.some((n, i) => (
+          n.roughcutLength !== data[i].roughcutLength || n.roughcutDate !== data[i].roughcutDate
+        ))
+        if (orderChanged || normalizedChanged) {
+          const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
+          await batchUpdateScenes(episode, updates, token).catch(() => {})
         }
-        await updateSummaryRow(episode, computeEpisodeStats(normalized), token).catch(() => {})
+        await updateSummaryRow(episode, computeEpisodeStats(sorted), token).catch(() => {})
       })
       .catch(e => setError(e.message))
       .finally(() => setLoading(false))
@@ -111,10 +111,15 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     try {
       const cleaned = normalizeScene(draft)
       await updateScene(episode, i, cleaned, token)
-      const updated = scenes.map((r, idx) => idx === i ? cleaned : r)
-      setScenes(updated)
+      const replaced = scenes.map((r, idx) => idx === i ? cleaned : r)
+      const sorted = sortScenes(replaced)
+      setScenes(sorted)
       setEditRow(null)
-      syncSummary(updated)
+      if (scenesOrderChanged(replaced, sorted)) {
+        const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
+        await batchUpdateScenes(episode, updates, token).catch(() => {})
+      }
+      syncSummary(sorted)
     } catch (e: unknown) {
       alert('儲存失敗：' + (e instanceof Error ? e.message : String(e)))
     } finally {
@@ -128,11 +133,16 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     try {
       const cleaned = normalizeScene(newScene)
       await appendScene(episode, cleaned, token)
-      const updated = [...scenes, cleaned]
-      setScenes(updated)
+      const appended = [...scenes, cleaned]
+      const sorted = sortScenes(appended)
+      setScenes(sorted)
       setNewScene(EMPTY_SCENE)
       setShowAddRow(false)
-      syncSummary(updated)
+      if (scenesOrderChanged(appended, sorted)) {
+        const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
+        await batchUpdateScenes(episode, updates, token).catch(() => {})
+      }
+      syncSummary(sorted)
     } catch (e: unknown) {
       alert('新增失敗：' + (e instanceof Error ? e.message : String(e)))
     } finally {
@@ -165,9 +175,14 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
     for (const sc of newScenes) {
       await appendScene(episode, sc, token)
     }
-    const updated = [...scenes, ...newScenes]
-    setScenes(updated)
-    syncSummary(updated)
+    const appended = [...scenes, ...newScenes]
+    const sorted = sortScenes(appended)
+    setScenes(sorted)
+    if (scenesOrderChanged(appended, sorted)) {
+      const updates = sorted.map((scene, rowIndex) => ({ rowIndex, scene }))
+      await batchUpdateScenes(episode, updates, token).catch(() => {})
+    }
+    syncSummary(sorted)
   }
 
   function editKeyDown(e: React.KeyboardEvent, i: number) {
