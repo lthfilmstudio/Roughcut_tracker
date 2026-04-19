@@ -9,6 +9,7 @@ import {
 } from '../lib/stats'
 import BatchImport from './BatchImport'
 import ExportMD from './ExportMD'
+import ExportCSV from './ExportCSV'
 
 interface Props {
   episode: string
@@ -53,6 +54,7 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
   const [newScene, setNewScene] = useState<SceneRow>(EMPTY_SCENE)
   const [showBatchImport, setShowBatchImport] = useState(false)
   const [showExportMD, setShowExportMD] = useState(false)
+  const [showExportCSV, setShowExportCSV] = useState(false)
   const tabScrollRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -266,6 +268,7 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
               <div style={s.actions}>
                 <button style={s.actionBtn} onClick={() => setShowBatchImport(true)}>批次匯入</button>
                 <button style={s.actionBtn} onClick={() => setShowExportMD(true)}>匯出 MD</button>
+                <button style={s.actionBtn} onClick={() => setShowExportCSV(true)}>匯出 CSV</button>
                 <button style={s.actionBtn} onClick={() => { setShowAddRow(true); setEditRow(null) }}>+ 新增場次</button>
               </div>
             </div>
@@ -466,6 +469,14 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
           finecutPct={finecutPct}
           totalDuration={secsToHMS(stats.roughcutSecs)}
           onClose={() => setShowExportMD(false)}
+        />
+      )}
+
+      {showExportCSV && (
+        <ExportCSV
+          episode={episode}
+          scenes={scenes}
+          onClose={() => setShowExportCSV(false)}
         />
       )}
     </div>
