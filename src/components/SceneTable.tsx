@@ -12,6 +12,13 @@ const STATUS_COLOR: Record<string, string> = {
   整場刪除: '#555555',
 }
 
+const STATUS_PRINT_CLASS: Record<string, string> = {
+  已精剪: 'print-status-finecut',
+  已初剪: 'print-status-roughcut',
+  尚缺鏡頭: 'print-status-missing',
+  整場刪除: 'print-status-deleted',
+}
+
 const FILTERS: { key: string; color?: string }[] = [
   { key: '全部' },
   { key: '已精剪', color: STATUS_COLOR['已精剪'] },
@@ -436,7 +443,7 @@ export default function SceneTable({
                         <td className="pdf-col-status" style={s.td}>
                           <span style={s.statusCell}>
                             <span className="no-print" style={{ ...s.dot, background: statusColor }} />
-                            <span style={{ color: statusColor }}>{data.status || '—'}</span>
+                            <span className={STATUS_PRINT_CLASS[data.status] ?? ''} style={{ color: statusColor }}>{data.status || '—'}</span>
                           </span>
                         </td>
                         <td className="pdf-col-missingShots" style={{ ...s.td, textAlign: 'center' }}>

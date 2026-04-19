@@ -37,13 +37,51 @@ a { color: inherit; text-decoration: none; }
 /* 列印模式下才顯示的元素，螢幕顯示時隱藏 */
 .print-only { display: none; }
 
-@media print {
-  @page { margin: 1.5cm; size: A4; }
+/* 全頁浮水印：螢幕上不顯示 */
+.print-watermark { display: none; }
 
-  html, body, #root {
+@media print {
+  @page {
+    margin: 1.5cm 1.8cm 1.5cm 1.5cm;
+    size: A4;
+    @bottom-center {
+      content: counter(page) " / " counter(pages);
+      font-size: 9px;
+      color: #666;
+      font-family: system-ui, -apple-system, "Helvetica Neue", Arial, sans-serif;
+    }
+  }
+
+  :root {
+    --bg: transparent !important;
+  }
+  html {
+    zoom: 0.95;
+  }
+  html, body {
     background: #fff !important;
     color: #000 !important;
     font-size: 10.5px;
+  }
+  #root {
+    background: transparent !important;
+    color: #000 !important;
+  }
+
+  /* 每頁正中央浮水印（疊在最上層 + 極淡 opacity，靠 pointer-events: none 不擋互動） */
+  .print-watermark {
+    display: block !important;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 400px;
+    height: auto;
+    opacity: 0.05;
+    z-index: 9999;
+    pointer-events: none;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 
   /* 隱藏：Nav、tab 列、工具列、所有按鈕、操作欄等 */
@@ -95,7 +133,7 @@ a { color: inherit; text-decoration: none; }
     border: 1px solid #000 !important;
     padding: 4px 8px !important;
     color: #000 !important;
-    background: #fff !important;
+    background: transparent !important;
     text-align: left;
     white-space: nowrap;
   }
@@ -108,24 +146,44 @@ a { color: inherit; text-decoration: none; }
 
   /* 主資料表格 */
   table.data-table {
-    width: 100%;
+    width: 100% !important;
+    table-layout: fixed !important;
     border-collapse: collapse !important;
     font-size: 10px !important;
     page-break-inside: auto;
+  }
+  /* 集數詳情頁欄寬（總和 100%，備註吃剩餘空間） */
+  table.data-table th.pdf-col-sceneNum,
+  table.data-table td.pdf-col-sceneNum { width: 6% !important; }
+  table.data-table th.pdf-col-roughcutLength,
+  table.data-table td.pdf-col-roughcutLength { width: 10% !important; }
+  table.data-table th.pdf-col-pages,
+  table.data-table td.pdf-col-pages { width: 7% !important; }
+  table.data-table th.pdf-col-date,
+  table.data-table td.pdf-col-date { width: 13% !important; }
+  table.data-table th.pdf-col-status,
+  table.data-table td.pdf-col-status { width: 12% !important; }
+  table.data-table th.pdf-col-missingShots,
+  table.data-table td.pdf-col-missingShots { width: 6% !important; text-align: center; }
+  table.data-table th.pdf-col-notes,
+  table.data-table td.pdf-col-notes {
+    width: 46% !important;
+    word-break: break-word;
+    white-space: normal !important;
   }
   table.data-table thead { display: table-header-group; }
   table.data-table tfoot { display: table-footer-group; }
   table.data-table tr {
     page-break-inside: avoid !important;
     page-break-after: auto;
-    background: #fff !important;
+    background: transparent !important;
   }
   table.data-table th,
   table.data-table td {
     border: 1px solid #000 !important;
     padding: 4px 6px !important;
     color: #000 !important;
-    background: #fff !important;
+    background: transparent !important;
     white-space: normal !important;
     max-width: none !important;
     overflow: visible !important;
@@ -137,12 +195,33 @@ a { color: inherit; text-decoration: none; }
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  /* 列印時表格內文改為深色，方便閱讀；狀態欄另有深色版本規則（見下方） */
+  table.data-table td:not(.pdf-col-status),
+  table.data-table td:not(.pdf-col-status) *,
+  .print-summary td,
+  .print-summary td * {
+    color: #000 !important;
+  }
+  /* 狀態欄：預設黑色（空狀態 / 備援） */
+  table.data-table td.pdf-col-status,
+  table.data-table td.pdf-col-status span {
+    color: #000 !important;
+  }
+  /* 狀態欄：各狀態印刷友善深色版（疊加於 inline 螢幕色之上） */
+  table.data-table td.pdf-col-status .print-status-finecut { color: #1B5E20 !important; }
+  table.data-table td.pdf-col-status .print-status-roughcut { color: #8B6508 !important; }
+  table.data-table td.pdf-col-status .print-status-missing { color: #C62828 !important; }
+  table.data-table td.pdf-col-status .print-status-deleted { color: #424242 !important; }
 
-  /* 去除資料容器的暗色背景與限寬 */
+  /* 去除資料容器的暗色背景與限寬（背景改透明，讓浮水印穿透） */
   main {
     padding: 0 !important;
     max-width: 100% !important;
-    background: #fff !important;
+    background: transparent !important;
+  }
+  /* 表格容器：列印時禁止水平捲動裁切，讓表格完整渲染 */
+  main > div {
+    overflow: visible !important;
   }
 
   /* 螢幕版統計卡片列印時隱藏（改用 print-summary） */
