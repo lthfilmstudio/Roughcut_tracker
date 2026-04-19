@@ -3,6 +3,8 @@ export const SHEETS_CONFIG = {
   scopes: ['https://www.googleapis.com/auth/spreadsheets'],
 }
 
+export const SHOW_NAME = '北城百畫帖'
+
 export const OAUTH_CONFIG = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',
   redirectUri: import.meta.env.PROD

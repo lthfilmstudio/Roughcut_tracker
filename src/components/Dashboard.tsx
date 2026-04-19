@@ -5,8 +5,7 @@ import type { EpisodesCache } from '../hooks/useEpisodesCache'
 import DashboardExportMD from './DashboardExportMD'
 import DashboardExportCSV from './DashboardExportCSV'
 import ErrorView from './ErrorView'
-
-const SHOW_NAME = '北城百畫帖'
+import { SHOW_NAME } from '../config/sheets'
 
 interface Props {
   token: string
@@ -58,7 +57,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
   return (
     <div style={s.page}>
       <nav style={s.nav}>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={s.navTitleBox}>
           <span style={s.navTitle}>Roughcut Tracker</span>
           <span style={s.navSub}>劇集《{SHOW_NAME}》</span>
         </div>
@@ -185,6 +184,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
           globalRoughcutPct={globalRoughcutPct}
           globalFinecutPct={globalFinecutPct}
           globalAvgPageDur={globalAvgPageDur}
+          scenesMap={scenes ?? {}}
           onClose={() => setShowExportMD(false)}
         />
       )}
@@ -197,6 +197,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
           globalRoughcutPct={globalRoughcutPct}
           globalFinecutPct={globalFinecutPct}
           globalAvgPageDur={globalAvgPageDur}
+          scenesMap={scenes ?? {}}
           onClose={() => setShowExportCSV(false)}
         />
       )}
@@ -207,8 +208,15 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: 'var(--bg)' },
   nav: {
-    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    position: 'relative',
+    display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
     padding: '16px 32px', borderBottom: '1px solid var(--border)',
+  },
+  navTitleBox: {
+    position: 'absolute', left: '50%', top: '50%',
+    transform: 'translate(-50%, -50%)',
+    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0,
+    pointerEvents: 'none',
   },
   navTitle: { fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', lineHeight: '1.4' },
   navSub: { fontSize: 11, color: '#666666', lineHeight: '1.4' },

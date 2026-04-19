@@ -91,6 +91,7 @@ export interface EpisodeStats {
   totalSecs: number       // 初剪 + 精剪
   roughcutPages: number   // 已初剪場次的頁數加總
   finecutPages: number    // 已精剪場次的頁數加總
+  totalPages: number      // 所有有效場次（扣除整場刪除）的頁數加總
 }
 
 export function computeEpisodeStats(scenes: SceneRow[]): EpisodeStats {
@@ -102,6 +103,7 @@ export function computeEpisodeStats(scenes: SceneRow[]): EpisodeStats {
   const finecutSecs = fine.reduce((a, r) => a + parseSecs(r.roughcutLength), 0)
   const roughcutPages = rough.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
   const finecutPages = fine.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
+  const totalPages = valid.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
 
   return {
     totalScenes: scenes.length,
@@ -116,5 +118,11 @@ export function computeEpisodeStats(scenes: SceneRow[]): EpisodeStats {
     totalSecs: roughcutSecs + finecutSecs,
     roughcutPages,
     finecutPages,
+    totalPages,
   }
+}
+
+export function todayYMD(): string {
+  const d = new Date()
+  return `${d.getFullYear()}/${String(d.getMonth() + 1).padStart(2, '0')}/${String(d.getDate()).padStart(2, '0')}`
 }
