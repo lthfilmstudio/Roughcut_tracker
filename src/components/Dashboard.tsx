@@ -5,7 +5,8 @@ import type { EpisodesCache } from '../hooks/useEpisodesCache'
 import DashboardExportMD from './DashboardExportMD'
 import DashboardExportCSV from './DashboardExportCSV'
 import ErrorView from './ErrorView'
-import { SHOW_NAME } from '../config/sheets'
+import ExportPDFModal from './ExportPDFModal'
+import { SHOW_NAME, STUDIO_NAME } from '../config/sheets'
 
 interface Props {
   token: string
@@ -19,11 +20,47 @@ interface EpisodeView {
   stats: EpisodeStats
 }
 
+const DASH_COL_DEFS: { key: string; label: string }[] = [
+  { key: 'episode', label: '集數' },
+  { key: 'roughPct', label: '已初剪%' },
+  { key: 'finePct', label: '已精剪%' },
+  { key: 'roughSecs', label: '初剪時長' },
+  { key: 'fineSecs', label: '精剪時長' },
+  { key: 'roughScenes', label: '初剪場次' },
+  { key: 'fineScenes', label: '精剪場次' },
+  { key: 'totalScenes', label: '總場次' },
+  { key: 'roughPages', label: '初剪頁數' },
+  { key: 'avgPage', label: '頁均時長' },
+]
+
+const DASH_PDF_FIELDS: { key: string; label: string }[] = [
+  { key: 'summary', label: '統計摘要' },
+  ...DASH_COL_DEFS,
+]
+
+const DASH_PDF_DEFAULTS: Record<string, boolean> = Object.fromEntries(
+  DASH_PDF_FIELDS.map(f => [f.key, true]),
+)
+
+function buildHideCSS(opts: Record<string, boolean>): string {
+  const hiddenCols = DASH_COL_DEFS.filter(c => !opts[c.key]).map(c => `.pdf-col-${c.key}`)
+  const parts: string[] = []
+  if (hiddenCols.length > 0) {
+    parts.push(`${hiddenCols.join(', ')} { display: none !important; }`)
+  }
+  if (!opts.summary) {
+    parts.push(`.pdf-summary { display: none !important; }`)
+  }
+  return parts.length > 0 ? `@media print { ${parts.join(' ')} }` : ''
+}
+
 export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
   const [hoveredEp, setHoveredEp] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
   const [showExportMD, setShowExportMD] = useState(false)
   const [showExportCSV, setShowExportCSV] = useState(false)
+  const [showExportPDF, setShowExportPDF] = useState(false)
+  const [pdfOpts, setPdfOpts] = useState<Record<string, boolean>>(DASH_PDF_DEFAULTS)
 
   const { scenes, loading, error } = cache
 
@@ -54,9 +91,13 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
   const totalCutSecs = totals.roughcutSecs + totals.finecutSecs
   const globalAvgPageDur = totalCutPages > 0 ? secsToHMS(Math.round(totalCutSecs / totalCutPages)) : '—'
 
+  const printDate = new Date().toLocaleDateString('zh-TW', {
+    timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
+  })
+
   return (
     <div style={s.page}>
-      <nav style={s.nav}>
+      <nav style={s.nav} className="no-print">
         <div style={s.navTitleBox}>
           <span style={s.navTitle}>Roughcut Tracker</span>
           <span style={s.navSub}>劇集《{SHOW_NAME}》</span>
@@ -70,8 +111,53 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
 
         {!loading && !error && eps.length > 0 && (
           <>
+            {/* 列印頁首 */}
+            <div className="print-only print-header">
+              <div className="print-header-row1">
+                <span className="print-studio">{STUDIO_NAME}</span>
+                <span className="print-meta">列印日期：{printDate}</span>
+              </div>
+              <h1 className="print-title">劇集《{SHOW_NAME}》剪輯進度報告</h1>
+            </div>
+
+            {/* 列印用簡潔統計表 */}
+            <table className="print-only print-summary pdf-summary">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th>時長</th>
+                  <th>場次</th>
+                  <th>百分比</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>已初剪</td>
+                  <td>{secsToHMS(totals.roughcutSecs)}</td>
+                  <td>{totals.roughcutScenes} / {totals.validScenes}</td>
+                  <td>{(globalRoughcutPct * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>已精剪</td>
+                  <td>{secsToHMS(totals.finecutSecs)}</td>
+                  <td>{totals.finecutScenes} / {totals.validScenes}</td>
+                  <td>{(globalFinecutPct * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>總計</td>
+                  <td>{secsToHMS(totals.roughcutSecs + totals.finecutSecs)}</td>
+                  <td>{totals.roughcutScenes + totals.finecutScenes} / {totals.validScenes}</td>
+                  <td>{totals.validScenes > 0 ? (((totals.roughcutScenes + totals.finecutScenes) / totals.validScenes) * 100).toFixed(1) : '0.0'}%</td>
+                </tr>
+                <tr>
+                  <td>總頁數（已初剪）</td>
+                  <td colSpan={3}>{totals.roughcutPages.toFixed(1)} 頁　・　頁均時長 {globalAvgPageDur}</td>
+                </tr>
+              </tbody>
+            </table>
+
             {/* 統計卡片 */}
-            <div style={s.statGrid}>
+            <div style={s.statGrid} className="stat-grid-screen">
               {[
                 { label: '已初剪', secs: totals.roughcutSecs, pct: globalRoughcutPct, count: totals.roughcutScenes, color: '#FFC107' },
                 { label: '已精剪', secs: totals.finecutSecs, pct: globalFinecutPct, count: totals.finecutScenes, color: '#4CAF50' },
@@ -102,8 +188,11 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
               <div style={s.statCard}>
                 <p style={s.statLabel}>總頁數</p>
                 <div style={s.statRow}>
-                  <p style={s.statValue}>{totals.roughcutPages.toFixed(1)} 頁</p>
-                  <div style={s.statRight}>
+                  <p style={s.statValue}>
+                    {totals.roughcutPages.toFixed(1)}
+                    <span style={s.statUnit}>頁</span>
+                  </p>
+                  <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
                     <span style={s.statSubValue}>已初剪頁數</span>
                   </div>
                 </div>
@@ -111,18 +200,19 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
             </div>
 
             {/* 工具列 */}
-            <div style={s.toolbar}>
+            <div style={s.toolbar} className="no-print">
               <button style={s.actionBtn} onClick={() => setShowExportMD(true)}>匯出 MD</button>
               <button style={s.actionBtn} onClick={() => setShowExportCSV(true)}>匯出 CSV</button>
+              <button style={s.actionBtn} onClick={() => setShowExportPDF(true)}>匯出 PDF</button>
             </div>
 
             {/* 進度表格 */}
             <div style={s.tableWrap}>
-              <table style={s.table}>
+              <table style={s.table} className="data-table">
                 <thead>
                   <tr>
-                    {['集數', '已初剪%', '已精剪%', '初剪時長', '精剪時長', '初剪場次', '精剪場次', '總場次', '初剪頁數', '頁均時長'].map(h => (
-                      <th key={h} style={s.th}>{h}</th>
+                    {DASH_COL_DEFS.map(c => (
+                      <th key={c.key} style={s.th} className={`pdf-col-${c.key}`}>{c.label}</th>
                     ))}
                   </tr>
                 </thead>
@@ -146,6 +236,7 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
                         onMouseLeave={() => setHoveredRow(null)}
                       >
                         <td
+                          className="pdf-col-episode"
                           style={{ ...s.td, ...s.epLink, color: isHovered ? '#ccc' : 'var(--text-primary)', textDecorationColor: isHovered ? '#888' : 'transparent' }}
                           onClick={() => onSelectEpisode(epId)}
                           onMouseEnter={() => setHoveredEp(row.episode)}
@@ -153,30 +244,30 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
                         >
                           {row.episode}
                         </td>
-                        <td style={s.td}>{roughPct}%</td>
-                        <td style={s.td}>{finePct}%</td>
-                        <td style={s.td}>{st.roughcutSecs > 0 ? secsToHMS(st.roughcutSecs) : '—'}</td>
-                        <td style={s.td}>{st.finecutSecs > 0 ? secsToHMS(st.finecutSecs) : '—'}</td>
-                        <td style={s.td}>{st.roughcutScenes || '—'}</td>
-                        <td style={s.td}>{st.finecutScenes || '—'}</td>
-                        <td style={s.td}>{st.totalScenes || '—'}</td>
-                        <td style={s.td}>{st.roughcutPages > 0 ? st.roughcutPages.toFixed(1) : '—'}</td>
-                        <td style={s.td}>{epAvg}</td>
+                        <td style={s.td} className="pdf-col-roughPct">{roughPct}%</td>
+                        <td style={s.td} className="pdf-col-finePct">{finePct}%</td>
+                        <td style={s.td} className="pdf-col-roughSecs">{st.roughcutSecs > 0 ? secsToHMS(st.roughcutSecs) : '—'}</td>
+                        <td style={s.td} className="pdf-col-fineSecs">{st.finecutSecs > 0 ? secsToHMS(st.finecutSecs) : '—'}</td>
+                        <td style={s.td} className="pdf-col-roughScenes">{st.roughcutScenes || '—'}</td>
+                        <td style={s.td} className="pdf-col-fineScenes">{st.finecutScenes || '—'}</td>
+                        <td style={s.td} className="pdf-col-totalScenes">{st.totalScenes || '—'}</td>
+                        <td style={s.td} className="pdf-col-roughPages">{st.roughcutPages > 0 ? st.roughcutPages.toFixed(1) : '—'}</td>
+                        <td style={s.td} className="pdf-col-avgPage">{epAvg}</td>
                       </tr>
                     )
                   })}
                   {/* 合計列 */}
                   <tr style={{ background: '#1C1C1C', borderTop: '1px solid #333' }}>
-                    <td style={{ ...s.td, fontWeight: 700, color: 'var(--text-primary)' }}>全劇合計</td>
-                    <td style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalRoughcutPct * 100).toFixed(1)}%</td>
-                    <td style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalFinecutPct * 100).toFixed(1)}%</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.roughcutSecs)}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.finecutSecs)}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutScenes || '—'}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{totals.finecutScenes || '—'}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{totals.totalScenes || '—'}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutPages > 0 ? totals.roughcutPages.toFixed(1) : '—'}</td>
-                    <td style={{ ...s.td, fontWeight: 600 }}>{globalAvgPageDur}</td>
+                    <td className="pdf-col-episode" style={{ ...s.td, fontWeight: 700, color: 'var(--text-primary)' }}>全劇合計</td>
+                    <td className="pdf-col-roughPct" style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalRoughcutPct * 100).toFixed(1)}%</td>
+                    <td className="pdf-col-finePct" style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalFinecutPct * 100).toFixed(1)}%</td>
+                    <td className="pdf-col-roughSecs" style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.roughcutSecs)}</td>
+                    <td className="pdf-col-fineSecs" style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.finecutSecs)}</td>
+                    <td className="pdf-col-roughScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutScenes || '—'}</td>
+                    <td className="pdf-col-fineScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.finecutScenes || '—'}</td>
+                    <td className="pdf-col-totalScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.totalScenes || '—'}</td>
+                    <td className="pdf-col-roughPages" style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutPages > 0 ? totals.roughcutPages.toFixed(1) : '—'}</td>
+                    <td className="pdf-col-avgPage" style={{ ...s.td, fontWeight: 600 }}>{globalAvgPageDur}</td>
                   </tr>
                 </tbody>
               </table>
@@ -184,6 +275,21 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
           </>
         )}
       </main>
+
+      <style dangerouslySetInnerHTML={{ __html: buildHideCSS(pdfOpts) }} />
+
+      {showExportPDF && (
+        <ExportPDFModal
+          fieldDefs={DASH_PDF_FIELDS}
+          initialOpts={pdfOpts}
+          onClose={() => setShowExportPDF(false)}
+          onConfirm={(opts) => {
+            setPdfOpts(opts)
+            setShowExportPDF(false)
+            window.setTimeout(() => window.print(), 80)
+          }}
+        />
+      )}
 
       {showExportMD && (
         <DashboardExportMD
@@ -242,11 +348,12 @@ const s: Record<string, React.CSSProperties> = {
   statCard: {
     background: '#1C1C1C', border: '1px solid #2A2A2A',
     borderRadius: 4, padding: '14px 18px',
-    display: 'flex', flexDirection: 'column',
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
   },
   statLabel: { fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 },
   statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
   statValue: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1, whiteSpace: 'nowrap' },
+  statUnit: { fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginLeft: 4 },
   statRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flex: 1, gap: 6, minWidth: 0 },
   statPct: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 },
   statBarRow: { display: 'flex', alignItems: 'center', gap: 8, width: '100%' },

@@ -13,7 +13,8 @@ import BatchImport from './BatchImport'
 import ExportMD from './ExportMD'
 import ExportCSV from './ExportCSV'
 import ErrorView from './ErrorView'
-import { SHOW_NAME } from '../config/sheets'
+import ExportPDFModal from './ExportPDFModal'
+import { SHOW_NAME, STUDIO_NAME } from '../config/sheets'
 
 interface Props {
   episode: string
@@ -53,6 +54,37 @@ const BATCH_ACTIONS: { label: string; value: string }[] = [
   { label: '清除狀態', value: '' },
 ]
 
+const EP_COL_DEFS: { key: string; label: string }[] = [
+  { key: 'sceneNum', label: '場次' },
+  { key: 'roughcutLength', label: '長度' },
+  { key: 'pages', label: '頁數' },
+  { key: 'date', label: '日期' },
+  { key: 'status', label: '狀態' },
+  { key: 'missingShots', label: '缺鏡' },
+  { key: 'notes', label: '備註' },
+]
+
+const EP_PDF_FIELDS: { key: string; label: string }[] = [
+  { key: 'summary', label: '統計摘要' },
+  ...EP_COL_DEFS,
+]
+
+const EP_PDF_DEFAULTS: Record<string, boolean> = Object.fromEntries(
+  EP_PDF_FIELDS.map(f => [f.key, true]),
+)
+
+function buildEpHideCSS(opts: Record<string, boolean>): string {
+  const hiddenCols = EP_COL_DEFS.filter(c => !opts[c.key]).map(c => `.pdf-col-${c.key}`)
+  const parts: string[] = []
+  if (hiddenCols.length > 0) {
+    parts.push(`${hiddenCols.join(', ')} { display: none !important; }`)
+  }
+  if (!opts.summary) {
+    parts.push(`.pdf-summary { display: none !important; }`)
+  }
+  return parts.length > 0 ? `@media print { ${parts.join(' ')} }` : ''
+}
+
 export default function EpisodeDetail({ episode, token, cache, onNavigate, onBack }: Props) {
   const [editRow, setEditRow] = useState<number | null>(null)
   const [draft, setDraft] = useState<SceneRow | null>(null)
@@ -64,6 +96,8 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
   const [showBatchImport, setShowBatchImport] = useState(false)
   const [showExportMD, setShowExportMD] = useState(false)
   const [showExportCSV, setShowExportCSV] = useState(false)
+  const [showExportPDF, setShowExportPDF] = useState(false)
+  const [pdfOpts, setPdfOpts] = useState<Record<string, boolean>>(EP_PDF_DEFAULTS)
   const [selectedScenes, setSelectedScenes] = useState<Set<string>>(new Set())
   const [showBatchMenu, setShowBatchMenu] = useState(false)
   const tabScrollRef = useRef<HTMLDivElement>(null)
@@ -300,17 +334,23 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
   const allVisibleSelected = visibleKeys.length > 0 && visibleKeys.every(k => selectedScenes.has(k))
   const someVisibleSelected = visibleKeys.some(k => selectedScenes.has(k))
 
+  const printDate = new Date().toLocaleDateString('zh-TW', {
+    timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
+  })
+  const totalSecs = stats.roughcutSecs + stats.finecutSecs
+  const combinedPct = stats.validScenes > 0 ? (stats.roughcutScenes + stats.finecutScenes) / stats.validScenes : 0
+
   return (
     <div style={s.page}>
       {/* Nav */}
-      <nav style={s.nav}>
+      <nav style={s.nav} className="no-print">
         <button style={s.backBtn} onClick={onBack}>← 返回總覽</button>
         <div style={s.navTitleBox}>
           <span style={s.navTitle}>Roughcut Tracker</span>
           <span style={s.navSub}>劇集《{SHOW_NAME}》</span>
         </div>
       </nav>
-      <div style={s.tabBar}>
+      <div style={s.tabBar} className="no-print">
         <button style={s.scrollBtn} onClick={() => scrollTabs('left')}>‹</button>
         <div ref={tabScrollRef} style={s.tabs}>
           {EPISODES.map(ep => (
@@ -332,8 +372,53 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
 
         {!loading && !error && (
           <>
+            {/* 列印頁首 */}
+            <div className="print-only print-header">
+              <div className="print-header-row1">
+                <span className="print-studio">{STUDIO_NAME}</span>
+                <span className="print-meta">列印日期：{printDate}</span>
+              </div>
+              <h1 className="print-title">劇集《{SHOW_NAME}》剪輯進度報告（{episode}）</h1>
+            </div>
+
+            {/* 列印用簡潔統計表 */}
+            <table className="print-only print-summary pdf-summary">
+              <thead>
+                <tr>
+                  <th>項目</th>
+                  <th>時長</th>
+                  <th>場次</th>
+                  <th>百分比</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>已初剪</td>
+                  <td>{secsToHMS(stats.roughcutSecs)}</td>
+                  <td>{stats.roughcutScenes} / {stats.validScenes}</td>
+                  <td>{(stats.roughcutPct * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>已精剪</td>
+                  <td>{secsToHMS(stats.finecutSecs)}</td>
+                  <td>{stats.finecutScenes} / {stats.validScenes}</td>
+                  <td>{(stats.finecutPct * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>總計</td>
+                  <td>{secsToHMS(totalSecs)}</td>
+                  <td>{stats.roughcutScenes + stats.finecutScenes} / {stats.validScenes}</td>
+                  <td>{(combinedPct * 100).toFixed(1)}%</td>
+                </tr>
+                <tr>
+                  <td>總頁數</td>
+                  <td colSpan={3}>{stats.totalPages.toFixed(1)} 頁（{stats.validScenes} 場，不含整場刪除）</td>
+                </tr>
+              </tbody>
+            </table>
+
             {/* 統計卡片 */}
-            <div style={s.statGrid}>
+            <div style={s.statGrid} className="stat-grid-screen">
               {[
                 { label: '已初剪', secs: stats.roughcutSecs, pct: stats.roughcutPct, count: stats.roughcutScenes, color: '#FFC107' },
                 { label: '已精剪', secs: stats.finecutSecs, pct: stats.finecutPct, count: stats.finecutScenes, color: '#4CAF50' },
@@ -364,8 +449,11 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
               <div style={s.statCard}>
                 <p style={s.statLabel}>總頁數</p>
                 <div style={s.statRow}>
-                  <p style={s.statValue}>{stats.totalPages.toFixed(1)} 頁</p>
-                  <div style={s.statRight}>
+                  <p style={s.statValue}>
+                    {stats.totalPages.toFixed(1)}
+                    <span style={s.statUnit}>頁</span>
+                  </p>
+                  <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
                     <span style={s.statSubValue}>{stats.validScenes} 場（不含整場刪除）</span>
                   </div>
                 </div>
@@ -373,7 +461,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
             </div>
 
             {/* 篩選列 + 操作按鈕 */}
-            <div style={s.toolbar}>
+            <div style={s.toolbar} className="no-print">
               <div style={s.filters}>
                 {FILTERS.map(f => (
                   <button
@@ -427,6 +515,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
                 <button style={s.actionBtn} onClick={() => setShowBatchImport(true)}>批次匯入</button>
                 <button style={s.actionBtn} onClick={() => setShowExportMD(true)}>匯出 MD</button>
                 <button style={s.actionBtn} onClick={() => setShowExportCSV(true)}>匯出 CSV</button>
+                <button style={s.actionBtn} onClick={() => setShowExportPDF(true)}>匯出 PDF</button>
                 <button style={s.actionBtn} onClick={() => { setShowAddRow(true); setEditRow(null) }}>+ 新增場次</button>
               </div>
             </div>
@@ -444,10 +533,10 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
             {/* 場次表格 */}
             {(scenes.length > 0 || showAddRow) && (
               <div style={s.tableWrap}>
-                <table style={s.table}>
+                <table style={s.table} className="data-table">
                   <thead>
                     <tr>
-                      <th style={{ ...s.th, width: 36, textAlign: 'center' }}>
+                      <th style={{ ...s.th, width: 36, textAlign: 'center' }} className="no-print">
                         <input
                           type="checkbox"
                           checked={allVisibleSelected}
@@ -456,9 +545,10 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
                           style={{ accentColor: '#fff', width: 14, height: 14, cursor: 'pointer' }}
                         />
                       </th>
-                      {['場次', '長度', '頁數', '日期', '狀態', '缺鏡', '備註', '操作'].map(h => (
-                        <th key={h} style={s.th}>{h}</th>
+                      {EP_COL_DEFS.map(c => (
+                        <th key={c.key} style={s.th} className={`pdf-col-${c.key}`}>{c.label}</th>
                       ))}
+                      <th style={s.th} className="no-print">操作</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -473,6 +563,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
                         <tr key={i} style={{ background: rawIdx % 2 === 0 ? 'var(--card-bg)' : '#161616' }}>
                           {/* 勾選欄 */}
                           <td
+                            className="no-print"
                             style={{ ...s.td, textAlign: 'center', width: 36 }}
                             onClick={e => { e.stopPropagation(); toggleSelectScene(row.scene) }}
                           >
@@ -533,33 +624,34 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
                                   onKeyDown={e => editKeyDown(e, i)}
                                 />
                               </td>
-                              <td style={s.td} onClick={e => e.stopPropagation()}>
+                              <td style={s.td} className="no-print" onClick={e => e.stopPropagation()}>
                                 <button style={s.saveBtn} onClick={() => saveEdit(i)} disabled={saving}>{saving ? '⋯' : '儲存'}</button>
                                 <button style={s.cancelBtn} onClick={cancelEdit}>取消</button>
                               </td>
                             </>
                           ) : (
                             <>
-                              <td style={{ ...s.td, color: 'var(--text-primary)', fontWeight: 500 }}>{row.scene}</td>
-                              <td style={s.td}>{data.roughcutLength || '—'}</td>
-                              <td style={s.td}>{data.pages || '—'}</td>
-                              <td style={s.td}>{data.roughcutDate || '—'}</td>
-                              <td style={s.td}>
+                              <td className="pdf-col-sceneNum" style={{ ...s.td, color: 'var(--text-primary)', fontWeight: 500 }}>{row.scene}</td>
+                              <td className="pdf-col-roughcutLength" style={s.td}>{data.roughcutLength || '—'}</td>
+                              <td className="pdf-col-pages" style={s.td}>{data.pages || '—'}</td>
+                              <td className="pdf-col-date" style={s.td}>{data.roughcutDate || '—'}</td>
+                              <td className="pdf-col-status" style={s.td}>
                                 <span style={s.statusCell}>
-                                  <span style={{ ...s.dot, background: statusColor }} />
+                                  <span className="no-print" style={{ ...s.dot, background: statusColor }} />
                                   <span style={{ color: statusColor }}>{data.status || '—'}</span>
                                 </span>
                               </td>
-                              <td style={{ ...s.td, textAlign: 'center' }}>
-                                <span style={{
+                              <td className="pdf-col-missingShots" style={{ ...s.td, textAlign: 'center' }}>
+                                <span className="no-print" style={{
                                   display: 'inline-block', width: 14, height: 14, borderRadius: 3,
                                   border: `2px solid ${data.missingShots === 'Y' ? '#FF9800' : '#444'}`,
                                   background: data.missingShots === 'Y' ? '#FF9800' : 'transparent',
                                   verticalAlign: 'middle',
                                 }} />
+                                <span className="print-only">{data.missingShots === 'Y' ? 'Y' : '—'}</span>
                               </td>
-                              <td style={{ ...s.td, color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.notes || '—'}</td>
-                              <td style={s.td}>
+                              <td className="pdf-col-notes" style={{ ...s.td, color: 'var(--text-secondary)', maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis' }}>{data.notes || '—'}</td>
+                              <td style={s.td} className="no-print">
                                 <button style={s.editBtn} onClick={() => startEdit(i)}>編輯</button>
                                 <button style={s.deleteBtn} onClick={() => handleDelete(i)}>刪除</button>
                               </td>
@@ -571,7 +663,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
 
                     {/* 新增場次列 */}
                     {showAddRow && (
-                      <tr style={{ background: '#111', outline: '1px solid var(--border)' }}>
+                      <tr className="no-print" style={{ background: '#111', outline: '1px solid var(--border)' }}>
                         <td style={{ ...s.td, width: 36 }} />
                         <td style={s.td}>
                           <input style={s.input} placeholder="場次" value={newScene.scene}
@@ -633,6 +725,21 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
           </>
         )}
       </main>
+
+      <style dangerouslySetInnerHTML={{ __html: buildEpHideCSS(pdfOpts) }} />
+
+      {showExportPDF && (
+        <ExportPDFModal
+          fieldDefs={EP_PDF_FIELDS}
+          initialOpts={pdfOpts}
+          onClose={() => setShowExportPDF(false)}
+          onConfirm={(opts) => {
+            setPdfOpts(opts)
+            setShowExportPDF(false)
+            window.setTimeout(() => window.print(), 80)
+          }}
+        />
+      )}
 
       {showBatchImport && (
         <BatchImport
@@ -711,11 +818,12 @@ const s: Record<string, React.CSSProperties> = {
   statCard: {
     background: '#1C1C1C', border: '1px solid #2A2A2A',
     borderRadius: 4, padding: '14px 18px',
-    display: 'flex', flexDirection: 'column',
+    display: 'flex', flexDirection: 'column', justifyContent: 'space-between',
   },
   statLabel: { fontSize: 11, color: 'var(--text-secondary)', marginBottom: 8 },
   statRow: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12 },
   statValue: { fontSize: 20, fontWeight: 700, lineHeight: 1, color: 'var(--text-primary)', whiteSpace: 'nowrap' },
+  statUnit: { fontSize: 12, fontWeight: 500, color: 'var(--text-secondary)', marginLeft: 4 },
   statRight: { display: 'flex', flexDirection: 'column', alignItems: 'flex-end', flex: 1, gap: 6, minWidth: 0 },
   statPct: { fontSize: 16, fontWeight: 600, color: 'var(--text-primary)', lineHeight: 1 },
   statBarRow: { display: 'flex', alignItems: 'center', gap: 8, width: '100%' },

@@ -4,6 +4,7 @@ export const SHEETS_CONFIG = {
 }
 
 export const SHOW_NAME = '北城百畫帖'
+export const STUDIO_NAME = '原本那間剪輯工作室'
 
 export const OAUTH_CONFIG = {
   clientId: import.meta.env.VITE_GOOGLE_CLIENT_ID ?? '',

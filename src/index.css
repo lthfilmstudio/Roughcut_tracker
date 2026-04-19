@@ -33,3 +33,118 @@ button { cursor: pointer; font-family: inherit; font-size: 14px; }
 button:disabled { opacity: 0.5; cursor: not-allowed; }
 input, select, textarea { font-family: inherit; font-size: 14px; }
 a { color: inherit; text-decoration: none; }
+
+/* 列印模式下才顯示的元素，螢幕顯示時隱藏 */
+.print-only { display: none; }
+
+@media print {
+  @page { margin: 1.5cm; size: A4; }
+
+  html, body, #root {
+    background: #fff !important;
+    color: #000 !important;
+    font-size: 10.5px;
+  }
+
+  /* 隱藏：Nav、tab 列、工具列、所有按鈕、操作欄等 */
+  .no-print { display: none !important; }
+
+  /* 僅列印顯示（交給瀏覽器依元素類型回復預設 display） */
+  .print-only { display: revert !important; }
+
+  /* 列印頁首（第一排：工作室 / 日期；第二排：報告標題） */
+  .print-header {
+    display: block !important;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 1.5px solid #000;
+    color: #000 !important;
+  }
+  .print-header-row1 {
+    display: flex !important;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 6px;
+  }
+  .print-header .print-studio {
+    font-size: 9px !important;
+    color: #666 !important;
+  }
+  .print-header .print-meta {
+    font-size: 10px !important;
+    color: #000 !important;
+  }
+  .print-header .print-title {
+    margin: 0 !important;
+    font-size: 18px !important;
+    font-weight: 700 !important;
+    color: #000 !important;
+    line-height: 1.3;
+    text-align: center;
+  }
+
+  /* 列印用簡潔統計表 */
+  .print-summary {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 14px;
+    font-size: 10.5px;
+  }
+  .print-summary th,
+  .print-summary td {
+    border: 1px solid #000 !important;
+    padding: 4px 8px !important;
+    color: #000 !important;
+    background: #fff !important;
+    text-align: left;
+    white-space: nowrap;
+  }
+  .print-summary th {
+    background: #e8e8e8 !important;
+    font-weight: 600;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 主資料表格 */
+  table.data-table {
+    width: 100%;
+    border-collapse: collapse !important;
+    font-size: 10px !important;
+    page-break-inside: auto;
+  }
+  table.data-table thead { display: table-header-group; }
+  table.data-table tfoot { display: table-footer-group; }
+  table.data-table tr {
+    page-break-inside: avoid !important;
+    page-break-after: auto;
+    background: #fff !important;
+  }
+  table.data-table th,
+  table.data-table td {
+    border: 1px solid #000 !important;
+    padding: 4px 6px !important;
+    color: #000 !important;
+    background: #fff !important;
+    white-space: normal !important;
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+  table.data-table th {
+    background: #e8e8e8 !important;
+    font-weight: 600 !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* 去除資料容器的暗色背景與限寬 */
+  main {
+    padding: 0 !important;
+    max-width: 100% !important;
+    background: #fff !important;
+  }
+
+  /* 螢幕版統計卡片列印時隱藏（改用 print-summary） */
+  .stat-grid-screen { display: none !important; }
+}
