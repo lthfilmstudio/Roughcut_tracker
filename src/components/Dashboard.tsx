@@ -99,6 +99,15 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout }: Props) {
                   </div>
                 </div>
               ))}
+              <div style={s.statCard}>
+                <p style={s.statLabel}>總頁數</p>
+                <div style={s.statRow}>
+                  <p style={s.statValue}>{totals.roughcutPages.toFixed(1)} 頁</p>
+                  <div style={s.statRight}>
+                    <span style={s.statSubValue}>已初剪頁數</span>
+                  </div>
+                </div>
+              </div>
             </div>
 
             {/* 工具列 */}
@@ -227,7 +236,7 @@ const s: Record<string, React.CSSProperties> = {
   main: { padding: '24px 40px', maxWidth: 1400, margin: '0 auto' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 80 },
   statGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12, marginBottom: 20,
+    display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20,
     alignItems: 'stretch',
   },
   statCard: {
