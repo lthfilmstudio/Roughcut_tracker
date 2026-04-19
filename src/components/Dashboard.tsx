@@ -6,6 +6,7 @@ import { secsToHMS, normalizeScene, computeEpisodeStats } from '../lib/stats'
 import type { EpisodeStats } from '../lib/stats'
 import DashboardExportMD from './DashboardExportMD'
 import DashboardExportCSV from './DashboardExportCSV'
+import ErrorView from './ErrorView'
 
 const SHOW_NAME = '北城百畫帖'
 
@@ -100,7 +101,7 @@ export default function Dashboard({ token, onSelectEpisode, onLogout }: Props) {
 
       <main style={s.main}>
         {loading && <p style={s.msg}>載入中⋯</p>}
-        {error && <p style={{ ...s.msg, color: 'var(--color-missing)' }}>錯誤：{error}</p>}
+        {error && <ErrorView error={error} />}
 
         {!loading && !error && eps.length === 0 && (
           <div style={s.emptyState}>

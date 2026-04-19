@@ -10,6 +10,7 @@ import {
 import BatchImport from './BatchImport'
 import ExportMD from './ExportMD'
 import ExportCSV from './ExportCSV'
+import ErrorView from './ErrorView'
 
 interface Props {
   episode: string
@@ -214,7 +215,7 @@ export default function EpisodeDetail({ episode, token, onNavigate, onBack }: Pr
 
       <main style={s.main}>
         {loading && <p style={s.msg}>載入中⋯</p>}
-        {error && <p style={{ ...s.msg, color: 'var(--color-missing)' }}>錯誤：{error}</p>}
+        {error && <ErrorView error={error} />}
 
         {!loading && !error && (
           <>
