@@ -189,7 +189,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
   return (
     <div style={s.page}>
       {/* Nav */}
-      <nav style={{ ...s.nav, justifyContent: IS_FILM ? 'flex-end' : 'flex-start' }} className="no-print">
+      <nav style={s.nav} className="no-print">
         {IS_FILM ? (
           <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
         ) : (
@@ -388,7 +388,7 @@ const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: 'var(--bg)' },
   nav: {
     position: 'relative',
-    display: 'flex', alignItems: 'center',
+    display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
     padding: '16px 32px', borderBottom: '1px solid var(--border)',
   },
   navTitleBox: {
