@@ -188,11 +188,11 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
   }
 
   return (
-    <div style={s.wrap}>
-      <header style={s.header}>
+    <div style={s.wrap} className="rt-admin-wrap">
+      <header style={s.header} className="rt-admin-header">
         <div>
           <p style={s.sublabel}>Roughcut Tracker</p>
-          <h1 style={s.title}>管理者模式</h1>
+          <h1 style={s.title} className="rt-admin-title">管理者模式</h1>
         </div>
         <div style={s.headerActions}>
           <button style={s.helpBtn} onClick={() => setHelpOpen(true)}>使用說明</button>
@@ -205,7 +205,7 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
       {createStep && <div style={s.progressBox}>{STEP_LABEL[createStep]}</div>}
 
       <section style={s.section}>
-        <div style={s.sectionHeader}>
+        <div style={s.sectionHeader} className="rt-admin-section-header">
           <h2 style={s.sectionTitle}>新增專案</h2>
           {!showAdd && (
             <button style={s.primaryBtn} onClick={() => { setShowAdd(true); setError(''); setWarning('') }}>
@@ -271,9 +271,9 @@ function ProjectRow({
 }) {
   const sheetTail = project.sheetId.slice(-6)
   return (
-    <div style={s.row}>
+    <div style={s.row} className="rt-admin-row">
       <div style={s.rowMain}>
-        <div style={s.rowTitle}>
+        <div style={s.rowTitle} className="rt-admin-row-title">
           <span style={s.typeBadge}>{project.type === 'film' ? '電影' : '劇集'}</span>
           <span style={s.rowName}>{project.name}</span>
           <span style={s.rowId}>id: {project.id}</span>
@@ -286,7 +286,7 @@ function ProjectRow({
           {project.passwordHash ? <> ・ 🔒 已設密碼</> : <> ・ ⚠️ 無密碼</>}
         </div>
       </div>
-      <div style={s.rowActions}>
+      <div style={s.rowActions} className="rt-admin-actions">
         <button style={s.enterBtn} disabled={disabled} onClick={onEnter}>進入專案 →</button>
         <button style={s.secondaryBtn} disabled={disabled} onClick={onEdit}>編輯</button>
         <button style={s.dangerBtn} disabled={disabled} onClick={onDelete}>刪除</button>
@@ -312,7 +312,7 @@ function ProjectForm({
 
   return (
     <form style={s.form} onSubmit={e => { e.preventDefault(); onSubmit(form) }}>
-      <div style={s.formGrid}>
+      <div style={s.formGrid} className="rt-admin-form-grid">
         <label style={s.field}>
           <span style={s.fieldLabel}>專案 id</span>
           <input

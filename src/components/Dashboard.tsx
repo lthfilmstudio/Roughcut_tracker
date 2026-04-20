@@ -101,15 +101,15 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout, logoutLabe
 
   return (
     <div style={s.page}>
-      <nav style={s.nav} className="no-print">
+      <nav style={s.nav} className="no-print rt-nav">
         <div style={s.navTitleBox}>
-          <span style={s.navTitle}>Roughcut Tracker</span>
-          <span style={s.navSub}>{projectTitle(project)}</span>
+          <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
+          <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
         </div>
         <button style={s.logoutBtn} onClick={onLogout}>{logoutLabel}</button>
       </nav>
 
-      <main style={s.main}>
+      <main style={s.main} className="rt-main">
         {loading && <p style={s.msg}>載入中⋯</p>}
         {error && <ErrorView error={error} />}
 
@@ -204,14 +204,89 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout, logoutLabe
             </div>
 
             {/* 工具列 */}
-            <div style={s.toolbar} className="no-print">
+            <div style={s.toolbar} className="no-print rt-toolbar">
               <button style={s.actionBtn} onClick={() => setShowExportMD(true)}>匯出 MD</button>
               <button style={s.actionBtn} onClick={() => setShowExportCSV(true)}>匯出 CSV</button>
               <button style={s.actionBtn} onClick={() => setShowExportPDF(true)}>匯出 PDF</button>
             </div>
 
-            {/* 進度表格 */}
-            <div style={s.tableWrap}>
+            {/* 手機卡片列表（桌機隱藏） */}
+            <div className="mobile-episode-list only-mobile no-print" style={{ paddingBottom: 24 }}>
+              {eps.map((row) => {
+                const epId = row.episode.toLowerCase().replace(/\s+/g, '')
+                const st = row.stats
+                const combinedPct = st.validScenes > 0
+                  ? (st.roughcutScenes + st.finecutScenes) / st.validScenes
+                  : 0
+                return (
+                  <div key={row.episode} className="mobile-card" onClick={() => onSelectEpisode(epId)}>
+                    <div className="mobile-card-head">
+                      <span className="mobile-card-title">{row.episode}</span>
+                      <span className="mobile-card-status" style={{ fontSize: 11 }}>
+                        {st.totalScenes} 場
+                      </span>
+                    </div>
+                    <div className="mobile-card-progress">
+                      <div className="mobile-card-progress-row">
+                        <span style={{ minWidth: 54 }}>已精剪</span>
+                        <div className="mobile-card-progress-bar">
+                          <div className="mobile-card-progress-fill" style={{ width: `${Math.min(st.finecutPct * 100, 100)}%`, background: '#4CAF50' }} />
+                        </div>
+                        <span style={{ minWidth: 50, textAlign: 'right' }}>{(st.finecutPct * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="mobile-card-progress-row">
+                        <span style={{ minWidth: 54 }}>已初剪</span>
+                        <div className="mobile-card-progress-bar">
+                          <div className="mobile-card-progress-fill" style={{ width: `${Math.min(st.roughcutPct * 100, 100)}%`, background: '#FFC107' }} />
+                        </div>
+                        <span style={{ minWidth: 50, textAlign: 'right' }}>{(st.roughcutPct * 100).toFixed(1)}%</span>
+                      </div>
+                      <div className="mobile-card-progress-row">
+                        <span style={{ minWidth: 54 }}>完成度</span>
+                        <div className="mobile-card-progress-bar">
+                          <div className="mobile-card-progress-fill" style={{ width: `${Math.min(combinedPct * 100, 100)}%`, background: '#E5E5E5' }} />
+                        </div>
+                        <span style={{ minWidth: 50, textAlign: 'right' }}>{(combinedPct * 100).toFixed(1)}%</span>
+                      </div>
+                    </div>
+                    <div className="mobile-card-meta" style={{ fontSize: 11 }}>
+                      <span>時長 {secsToHMS(st.roughcutSecs + st.finecutSecs)}</span>
+                      <span>頁數 {st.roughcutPages > 0 ? st.roughcutPages.toFixed(1) : '—'}</span>
+                    </div>
+                  </div>
+                )
+              })}
+              {/* 全劇合計 */}
+              <div className="mobile-card" style={{ background: '#1C1C1C', cursor: 'default' }} onClick={e => e.stopPropagation()}>
+                <div className="mobile-card-head">
+                  <span className="mobile-card-title" style={{ color: 'var(--text-primary)' }}>全劇合計</span>
+                  <span className="mobile-card-status" style={{ fontSize: 11 }}>{totals.totalScenes} 場</span>
+                </div>
+                <div className="mobile-card-progress">
+                  <div className="mobile-card-progress-row">
+                    <span style={{ minWidth: 54 }}>已精剪</span>
+                    <div className="mobile-card-progress-bar">
+                      <div className="mobile-card-progress-fill" style={{ width: `${Math.min(globalFinecutPct * 100, 100)}%`, background: '#4CAF50' }} />
+                    </div>
+                    <span style={{ minWidth: 50, textAlign: 'right' }}>{(globalFinecutPct * 100).toFixed(1)}%</span>
+                  </div>
+                  <div className="mobile-card-progress-row">
+                    <span style={{ minWidth: 54 }}>已初剪</span>
+                    <div className="mobile-card-progress-bar">
+                      <div className="mobile-card-progress-fill" style={{ width: `${Math.min(globalRoughcutPct * 100, 100)}%`, background: '#FFC107' }} />
+                    </div>
+                    <span style={{ minWidth: 50, textAlign: 'right' }}>{(globalRoughcutPct * 100).toFixed(1)}%</span>
+                  </div>
+                </div>
+                <div className="mobile-card-meta" style={{ fontSize: 11 }}>
+                  <span>總時長 {secsToHMS(totals.roughcutSecs + totals.finecutSecs)}</span>
+                  <span>頁均 {globalAvgPageDur}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 桌機進度表格（手機隱藏，但列印時仍需要） */}
+            <div style={s.tableWrap} className="hide-on-mobile">
               <table style={s.table} className="data-table">
                 <thead>
                   <tr>

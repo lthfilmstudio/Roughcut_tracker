@@ -189,19 +189,19 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
   return (
     <div style={s.page}>
       {/* Nav */}
-      <nav style={s.nav} className="no-print">
+      <nav style={s.nav} className="no-print rt-nav">
         {IS_FILM ? (
           <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
         ) : (
           <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回總覽'}</button>
         )}
         <div style={s.navTitleBox}>
-          <span style={s.navTitle}>Roughcut Tracker</span>
-          <span style={s.navSub}>{projectTitle(project)}</span>
+          <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
+          <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
         </div>
       </nav>
       {!IS_FILM && (
-        <div style={s.tabBar} className="no-print">
+        <div style={s.tabBar} className="no-print rt-tabbar">
           <button style={s.scrollBtn} onClick={() => scrollTabs('left')}>‹</button>
           <div ref={tabScrollRef} style={s.tabs}>
             {EPISODES.map(ep => (
@@ -222,7 +222,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
         <SummaryBar stats={stats} />
       )}
 
-      <main style={s.main}>
+      <main style={s.main} className="rt-main">
         {loading && <p style={s.msg}>載入中⋯</p>}
         {error && <ErrorView error={error} />}
 

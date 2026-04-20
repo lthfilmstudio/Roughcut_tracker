@@ -1,1 +1,470 @@
-/* intentionally empty */
+/* ==== 手機斷點 (<=768px) ==== */
+@media (max-width: 768px) {
+  /* 統計卡片：4 欄 → 2 欄 */
+  .stat-grid-screen {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 8px !important;
+    margin-bottom: 12px !important;
+  }
+
+  /* 主內容左右留白縮小 */
+  .rt-main {
+    padding: 16px 12px !important;
+  }
+
+  .rt-nav {
+    padding: 12px 16px !important;
+  }
+
+  .rt-nav-title {
+    font-size: 13px !important;
+  }
+
+  .rt-nav-sub {
+    font-size: 10px !important;
+  }
+
+  .rt-tabbar {
+    padding: 6px 12px !important;
+  }
+
+  .rt-summary-sticky {
+    padding: 10px 12px !important;
+  }
+
+  /* 工具列在手機用橫向 scroll 不換行 */
+  .rt-toolbar {
+    flex-wrap: nowrap !important;
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .rt-toolbar::-webkit-scrollbar { display: none; }
+
+  /* 顯示/隱藏切換 */
+  .hide-on-mobile { display: none !important; }
+
+  /* ==== AdminDashboard 手機調整 ==== */
+  .rt-admin-wrap {
+    padding: 20px 14px 100px !important;
+  }
+
+  .rt-admin-header {
+    flex-wrap: wrap !important;
+    gap: 12px !important;
+    padding-bottom: 14px !important;
+    margin-bottom: 16px !important;
+  }
+
+  .rt-admin-title {
+    font-size: 20px !important;
+  }
+
+  .rt-admin-section-header {
+    flex-wrap: wrap !important;
+    gap: 10px !important;
+  }
+
+  .rt-admin-row {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 12px !important;
+  }
+
+  .rt-admin-row-title {
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    row-gap: 4px !important;
+    column-gap: 8px !important;
+  }
+
+  .rt-admin-actions {
+    display: grid !important;
+    grid-template-columns: 1.4fr 1fr 1fr !important;
+    gap: 6px !important;
+  }
+
+  .rt-admin-actions > button {
+    width: 100%;
+    font-size: 12px !important;
+    padding: 10px 6px !important;
+    white-space: nowrap;
+  }
+
+  .rt-admin-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (min-width: 769px) {
+  .only-mobile { display: none !important; }
+}
+
+/* ==== 手機更小螢幕 (<=480px)：statCard 單欄 ==== */
+@media (max-width: 480px) {
+  .stat-grid-screen {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ==== 卡片列表（手機） ==== */
+.mobile-scene-list,
+.mobile-episode-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mobile-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-card:active {
+  background: #1e1e1e;
+}
+
+.mobile-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-card-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.mobile-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mobile-card-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.mobile-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.mobile-card-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mobile-card-notes {
+  font-size: 12px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.mobile-card-flags {
+  display: flex;
+  gap: 6px;
+}
+
+.mobile-flag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+.mobile-flag-missing {
+  background: rgba(255, 152, 0, 0.15);
+  color: #ffb74d;
+}
+
+.mobile-flag-notes {
+  background: rgba(96, 165, 250, 0.15);
+  color: #60a5fa;
+}
+
+.mobile-card-select {
+  width: 18px;
+  height: 18px;
+  accent-color: #fff;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.mobile-card-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+.mobile-card-progress-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.mobile-card-progress-bar {
+  background: #2a2a2a;
+  border-radius: 2px;
+  height: 3px;
+  flex: 1;
+  overflow: hidden;
+}
+
+.mobile-card-progress-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* ==== Bottom Sheet ==== */
+.bottom-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  z-index: 100;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: fade-in 0.2s ease;
+}
+
+.bottom-sheet {
+  background: #111;
+  border: 1px solid var(--border);
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 640px;
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
+  animation: slide-up 0.25s cubic-bezier(0.2, 0.9, 0.3, 1);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.bottom-sheet-handle {
+  width: 40px;
+  height: 4px;
+  border-radius: 4px;
+  background: #444;
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+
+.bottom-sheet-header {
+  padding: 10px 20px 12px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bottom-sheet-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.bottom-sheet-close {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 20px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.bottom-sheet-body {
+  padding: 16px 20px;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.bottom-sheet-footer {
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom, 0px));
+  display: flex;
+  gap: 10px;
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.bottom-sheet-footer button {
+  flex: 1;
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.bottom-sheet-save {
+  background: var(--text-primary);
+  color: var(--bg);
+  border: none;
+}
+
+.bottom-sheet-save:disabled {
+  background: #333;
+  color: #666;
+  cursor: not-allowed;
+}
+
+.bottom-sheet-cancel {
+  background: transparent;
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+}
+
+.bottom-sheet-delete {
+  flex: 0 0 auto;
+  background: transparent;
+  color: #f87171;
+  border: 1px solid #7f1d1d;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+/* ==== 表單欄位 ==== */
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.form-field-label {
+  font-size: 12px;
+  color: var(--text-secondary);
+  letter-spacing: 0.04em;
+}
+
+.form-field-input,
+.form-field-select {
+  background: #0b0b0b;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  padding: 12px 14px;
+  font-size: 16px; /* 避免 iOS safari 聚焦縮放 */
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.form-field-input:focus,
+.form-field-select:focus {
+  border-color: #555;
+}
+
+.form-field-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.form-field-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: #FF9800;
+}
+
+/* ==== Floating Action Button (FAB) ==== */
+.fab {
+  position: fixed;
+  right: 20px;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  width: 56px;
+  height: 56px;
+  border-radius: 28px;
+  background: var(--text-primary);
+  color: var(--bg);
+  border: none;
+  font-size: 28px;
+  line-height: 1;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4);
+  cursor: pointer;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.fab:disabled {
+  background: #444;
+  color: #888;
+  cursor: not-allowed;
+}
+
+/* ==== 手機批次工具列 ==== */
+.mobile-batch-bar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: #1e3a5f;
+  color: #e0ecff;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  border-radius: 8px;
+  margin-bottom: 8px;
+}
+
+.mobile-batch-bar button {
+  background: transparent;
+  border: 1px solid #60a5fa;
+  color: #cfe1ff;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.mobile-batch-bar .mobile-batch-spacer { flex: 1; }

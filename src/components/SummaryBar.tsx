@@ -35,8 +35,8 @@ export default function SummaryBar({ stats }: Props) {
   ]
 
   return (
-    <div style={s.sticky} className="no-print">
-      <div style={s.grid}>
+    <div style={s.sticky} className="no-print rt-summary-sticky">
+      <div style={s.grid} className="stat-grid-screen">
         {cards.map(c => (
           <div key={c.label} style={s.card}>
             <p style={s.label}>{c.label}</p>
