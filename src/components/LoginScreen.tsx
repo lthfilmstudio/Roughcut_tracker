@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import HelpModal from './HelpModal'
 
 interface Props {
   onSubmit: (pwd: string) => void
@@ -18,6 +19,7 @@ export default function LoginScreen({
 }: Props) {
   const [pwd, setPwd] = useState('')
   const [localError, setLocalError] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   useEffect(() => {
     if (error) {
@@ -62,7 +64,11 @@ export default function LoginScreen({
           </button>
         </form>
         <p style={s.hint}>{hint}</p>
+        <button type="button" style={s.helpLink} onClick={() => setHelpOpen(true)}>
+          使用說明
+        </button>
       </div>
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   )
 }
@@ -92,4 +98,9 @@ const s: Record<string, React.CSSProperties> = {
     border: 'none', borderRadius: 8, fontWeight: 600, marginTop: 4,
   },
   hint: { fontSize: 12, color: '#444', marginTop: 20, textAlign: 'center' },
+  helpLink: {
+    display: 'block', margin: '12px auto 0', background: 'transparent',
+    border: 'none', color: 'var(--text-secondary)', fontSize: 12,
+    textDecoration: 'underline', cursor: 'pointer', padding: 4,
+  },
 }

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import bcrypt from 'bcryptjs'
 import { getDataService } from '../services'
 import type { ProjectConfig, ProjectType } from '../config/projectConfig'
+import HelpModal from './HelpModal'
 
 interface Props {
   token: string
@@ -53,6 +54,7 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
   const [saving, setSaving] = useState(false)
   const [createStep, setCreateStep] = useState<CreateStep>(null)
   const [warning, setWarning] = useState('')
+  const [helpOpen, setHelpOpen] = useState(false)
 
   async function reload() {
     setLoading(true)
@@ -192,7 +194,10 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
           <p style={s.sublabel}>Roughcut Tracker</p>
           <h1 style={s.title}>管理者模式</h1>
         </div>
-        <button style={s.logoutBtn} onClick={onLogout}>登出</button>
+        <div style={s.headerActions}>
+          <button style={s.helpBtn} onClick={() => setHelpOpen(true)}>使用說明</button>
+          <button style={s.logoutBtn} onClick={onLogout}>登出</button>
+        </div>
       </header>
 
       {error && <div style={s.errorBox}>{error}</div>}
@@ -249,6 +254,8 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
           ))}
         </div>
       </section>
+
+      <HelpModal open={helpOpen} onClose={() => setHelpOpen(false)} />
     </div>
   )
 }
@@ -415,6 +422,12 @@ const s: Record<string, React.CSSProperties> = {
     letterSpacing: '0.08em', textTransform: 'uppercase',
   },
   title: { fontSize: 24, fontWeight: 600, margin: 0 },
+  headerActions: { display: 'flex', gap: 8, alignItems: 'center' },
+  helpBtn: {
+    padding: '8px 16px', background: 'transparent', color: 'var(--text-secondary)',
+    border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer',
+    fontSize: 13,
+  },
   logoutBtn: {
     padding: '8px 16px', background: 'transparent', color: 'var(--text-secondary)',
     border: '1px solid var(--border)', borderRadius: 8, cursor: 'pointer',
