@@ -238,7 +238,7 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
           const hasNote = r.notes && r.notes.trim() !== ''
           const hasMissing = r.missingShots === 'Y'
           return (
-            <button key={`${r.scene}-${i}`} style={s.card} onClick={() => setEditing({ rowIndex: i, draft: r })}>
+            <button key={`${r.scene}-${i}`} style={s.card} onClick={() => setEditing({ rowIndex: i, draft: { ...r, roughcutDate: r.roughcutDate || todayYMD() } })}>
               <span style={{ ...s.dot, background: color }} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={s.row1}>
