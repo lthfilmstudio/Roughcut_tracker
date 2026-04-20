@@ -14,6 +14,7 @@ interface Props {
   token: string
   cache: EpisodesCache
   onSelectEpisode: (ep: string) => void
+  onOpenQuick: () => void
   onLogout: () => void
   logoutLabel?: string
 }
@@ -57,7 +58,7 @@ function buildHideCSS(opts: Record<string, boolean>): string {
   return parts.length > 0 ? `@media print { ${parts.join(' ')} }` : ''
 }
 
-export default function Dashboard({ cache, onSelectEpisode, onLogout, logoutLabel = '登出' }: Props) {
+export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogout, logoutLabel = '登出' }: Props) {
   const { project } = useProject()
   const [hoveredEp, setHoveredEp] = useState<string | null>(null)
   const [hoveredRow, setHoveredRow] = useState<number | null>(null)
@@ -115,6 +116,22 @@ export default function Dashboard({ cache, onSelectEpisode, onLogout, logoutLabe
 
         {!loading && !error && eps.length > 0 && (
           <>
+            {/* 快速輸入入口 */}
+            <button
+              className="no-print rt-quick-banner"
+              style={s.quickBanner}
+              onClick={onOpenQuick}
+            >
+              <span style={s.quickBannerLeft}>
+                <span style={s.quickBannerIcon}>⚡</span>
+                <span>
+                  <span style={s.quickBannerTitle}>快速輸入</span>
+                  <span style={s.quickBannerSub}>手機版快速更新入口</span>
+                </span>
+              </span>
+              <span style={s.quickBannerArrow}>→</span>
+            </button>
+
             {/* 列印頁首 */}
             <div className="print-only print-header">
               <div className="print-header-row1">
@@ -446,6 +463,24 @@ const s: Record<string, React.CSSProperties> = {
     padding: '7px 14px', background: 'transparent', color: 'var(--text-secondary)',
     border: '1px solid var(--border)', borderRadius: 6, fontSize: 13,
   },
+  quickBanner: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    width: '100%', marginBottom: 16, padding: '14px 18px',
+    background: 'linear-gradient(135deg, #2A2414 0%, #1C1C1C 100%)',
+    border: '1px solid #3A3114', borderLeft: '3px solid #FFC107',
+    borderRadius: 6, color: 'var(--text-primary)', cursor: 'pointer',
+    textAlign: 'left',
+  },
+  quickBannerLeft: { display: 'flex', alignItems: 'center', gap: 14 },
+  quickBannerIcon: { fontSize: 22, lineHeight: 1 },
+  quickBannerTitle: {
+    display: 'block', fontSize: 15, fontWeight: 600,
+    color: '#FFC107', lineHeight: 1.3,
+  },
+  quickBannerSub: {
+    display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2,
+  },
+  quickBannerArrow: { fontSize: 18, color: '#FFC107' },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {

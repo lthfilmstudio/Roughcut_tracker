@@ -6,6 +6,7 @@ import LoginScreen from './components/LoginScreen'
 import Dashboard from './components/Dashboard'
 import EpisodeDetail from './components/EpisodeDetail'
 import AdminDashboard from './components/AdminDashboard'
+import QuickPage from './components/QuickPage'
 import { getTabNames, type ProjectConfig } from './config/projectConfig'
 import { useProject } from './contexts/ProjectContext'
 import { getDataService } from './services'
@@ -17,7 +18,7 @@ const ADMIN_MODE_KEY = 'admin_mode'
 const ADMIN_VERIFIED_KEY = 'admin_verified'
 const ADMIN_PASSWORD_HASH = import.meta.env.VITE_ADMIN_PASSWORD ?? ''
 
-type View = { page: 'dashboard' } | { page: 'episode'; ep: string }
+type View = { page: 'dashboard' } | { page: 'episode'; ep: string } | { page: 'quick' }
 
 export default function App() {
   const { project, setProject } = useProject()
@@ -218,7 +219,18 @@ export default function App() {
   }
 
   const exitFn = adminEntered ? handleReturnToAdmin : handleLogout
-  const exitLabel = adminEntered ? '← 返回管理介面' : '登出'
+  const exitLabel = adminEntered ? '← 返回總覽' : '登出'
+
+  if (view.page === 'quick') {
+    return (
+      <QuickPage
+        token={accessToken}
+        cache={cache}
+        onExit={isFilm ? exitFn : () => setView({ page: 'dashboard' })}
+        exitLabel={isFilm ? exitLabel : '← 返回總覽'}
+      />
+    )
+  }
 
   if (view.page === 'episode') {
     return (
@@ -227,6 +239,7 @@ export default function App() {
         token={accessToken}
         cache={cache}
         onNavigate={(ep) => setView({ page: 'episode', ep })}
+        onOpenQuick={() => setView({ page: 'quick' })}
         onBack={isFilm ? exitFn : () => setView({ page: 'dashboard' })}
         backLabel={isFilm ? exitLabel : '← 返回總覽'}
       />
@@ -238,6 +251,7 @@ export default function App() {
       token={accessToken}
       cache={cache}
       onSelectEpisode={(ep) => setView({ page: 'episode', ep })}
+      onOpenQuick={() => setView({ page: 'quick' })}
       onLogout={exitFn}
       logoutLabel={exitLabel}
     />
