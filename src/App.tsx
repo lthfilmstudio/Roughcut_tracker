@@ -219,7 +219,7 @@ export default function App() {
   }
 
   const exitFn = adminEntered ? handleReturnToAdmin : handleLogout
-  const exitLabel = adminEntered ? '← 返回管理介面' : '登出'
+  const exitLabel = adminEntered ? '← 返回總覽' : '登出'
 
   if (view.page === 'quick') {
     return (
