@@ -22,6 +22,7 @@ interface Props {
   token: string
   cache: EpisodesCache
   onNavigate: (ep: string) => void
+  onOpenQuick: () => void
   onBack: () => void
   backLabel?: string
 }
@@ -38,7 +39,7 @@ function buildEpHideCSS(opts: Record<string, boolean>): string {
   return parts.length > 0 ? `@media print { ${parts.join(' ')} }` : ''
 }
 
-export default function EpisodeDetail({ episode, token, cache, onNavigate, onBack, backLabel }: Props) {
+export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpenQuick, onBack, backLabel }: Props) {
   const { project } = useProject()
   const EPISODES = getTabNames(project)
   const IS_FILM = project.type === 'film'
@@ -200,6 +201,27 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onBac
           <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
         </div>
       </nav>
+
+      {/* 快速輸入入口（置於所有內容最上方，電影/劇集模式皆適用） */}
+      {!loading && !error && (
+        <div style={s.quickBannerWrap} className="no-print rt-quick-banner-wrap">
+          <button
+            className="rt-quick-banner"
+            style={s.quickBanner}
+            onClick={onOpenQuick}
+          >
+            <span style={s.quickBannerLeft}>
+              <span style={s.quickBannerIcon}>⚡</span>
+              <span>
+                <span style={s.quickBannerTitle}>快速輸入</span>
+                <span style={s.quickBannerSub}>手機版快速更新入口</span>
+              </span>
+            </span>
+            <span style={s.quickBannerArrow}>→</span>
+          </button>
+        </div>
+      )}
+
       {!IS_FILM && (
         <div style={s.tabBar} className="no-print rt-tabbar">
           <button style={s.scrollBtn} onClick={() => scrollTabs('left')}>‹</button>
@@ -429,6 +451,25 @@ const s: Record<string, React.CSSProperties> = {
     border: '1px solid var(--border)',
   },
   main: { padding: '20px 40px', maxWidth: 1400, margin: '0 auto' },
+  quickBannerWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
+  quickBanner: {
+    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+    width: '100%', padding: '14px 18px',
+    background: 'linear-gradient(135deg, #2A2414 0%, #1C1C1C 100%)',
+    border: '1px solid #3A3114', borderLeft: '3px solid #FFC107',
+    borderRadius: 6, color: 'var(--text-primary)', cursor: 'pointer',
+    textAlign: 'left',
+  },
+  quickBannerLeft: { display: 'flex', alignItems: 'center', gap: 14 },
+  quickBannerIcon: { fontSize: 22, lineHeight: 1 },
+  quickBannerTitle: {
+    display: 'block', fontSize: 15, fontWeight: 600,
+    color: '#FFC107', lineHeight: 1.3,
+  },
+  quickBannerSub: {
+    display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2,
+  },
+  quickBannerArrow: { fontSize: 18, color: '#FFC107' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 60 },
   statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 16, alignItems: 'stretch' },
   statCard: {
