@@ -1,5 +1,6 @@
-import type { DataService } from './dataService'
+import type { CreateSheetResult, DataService } from './dataService'
 import type { ProjectConfig, ProjectType } from '../config/projectConfig'
+import { getTabNames, hasSummaryTab } from '../config/projectConfig'
 import type { SceneRow, SummaryRow } from '../types'
 import type { EpisodeStats } from '../lib/stats'
 import { secsToHMS, normalizeScene } from '../lib/stats'
@@ -7,6 +8,17 @@ import { secsToHMS, normalizeScene } from '../lib/stats'
 const API_ROOT = 'https://sheets.googleapis.com/v4/spreadsheets'
 const META_TAB = 'Projects'
 const META_RANGE = `${META_TAB}!A2:H`
+
+const SCENE_HEADER = [
+  '場次', '初剪長度', '頁數', '初剪日期',
+  '狀態', '尚缺鏡頭', '備註',
+]
+const SUMMARY_HEADER = [
+  '集數', '已初剪%', '已精剪%',
+  '已初剪時長', '已精剪時長', '總時長',
+  '已初剪場次', '已精剪場次', '總場次',
+  '已初剪頁數', '已精剪頁數', '頁均時長',
+]
 
 export class GoogleSheetsService implements DataService {
   private token: string
@@ -106,6 +118,67 @@ export class GoogleSheetsService implements DataService {
   async createProject(p: ProjectConfig): Promise<void> {
     await this.apiAppend(this.metaSheetId, `${META_TAB}!A:H`, [this.projectToRow(p)])
   }
+
+  async createProjectSheet(p: ProjectConfig): Promise<CreateSheetResult> {
+    const sceneTabs = getTabNames(p)
+    if (!sceneTabs.length) throw new Error('無法決定 tab 結構，請確認 type / episodeCount / episodePrefix')
+    const allTabs = hasSummaryTab(p) ? [...sceneTabs, 'Summary'] : sceneTabs
+    const title = `Roughcut Tracker_${p.name}`
+
+    const createRes = await fetch(API_ROOT, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        properties: { title },
+        sheets: allTabs.map(name => ({ properties: { title: name } })),
+      }),
+    })
+    if (!createRes.ok) throw new Error(`建立 Sheet 失敗（Sheets API ${createRes.status}）`)
+    const created: { spreadsheetId: string } = await createRes.json()
+    const newSheetId = created.spreadsheetId
+    const sheetUrl = `https://docs.google.com/spreadsheets/d/${newSheetId}/edit`
+
+    try {
+      await this.writeInitialHeaders(newSheetId, p, sceneTabs)
+    } catch (e) {
+      throw new Error(`Sheet 已建立但寫入 header 失敗，請到 Drive 刪除空殼檔後重試：${sheetUrl}（原因：${e instanceof Error ? e.message : String(e)}）`)
+    }
+
+    return { sheetId: newSheetId, movedToFolder: false, sheetUrl }
+  }
+
+  private async writeInitialHeaders(
+    sheetId: string, p: ProjectConfig, tabs: string[],
+  ): Promise<void> {
+    const data: { range: string; majorDimension: 'ROWS'; values: string[][] }[] = []
+
+    for (const tab of tabs) {
+      data.push({ range: `${tab}!A1:G1`, majorDimension: 'ROWS', values: [SCENE_HEADER] })
+    }
+
+    if (hasSummaryTab(p) && p.episodeCount && p.episodePrefix) {
+      const epLabels: string[][] = Array.from({ length: p.episodeCount }, (_, i) => [
+        `${p.episodePrefix}${String(i + 1).padStart(2, '0')}`,
+      ])
+      data.push({ range: `Summary!A1:L1`, majorDimension: 'ROWS', values: [SUMMARY_HEADER] })
+      data.push({
+        range: `Summary!A2:A${p.episodeCount + 1}`,
+        majorDimension: 'ROWS',
+        values: epLabels,
+      })
+    }
+
+    const res = await fetch(
+      `${this.base(sheetId)}/values:batchUpdate`,
+      {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valueInputOption: 'USER_ENTERED', data }),
+      },
+    )
+    if (!res.ok) throw new Error(`Sheets API ${res.status}`)
+  }
+
 
   async updateProject(p: ProjectConfig): Promise<void> {
     const projects = await this.getProjects()

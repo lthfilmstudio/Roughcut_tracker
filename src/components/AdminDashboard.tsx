@@ -36,6 +36,13 @@ function toForm(p: ProjectConfig): FormData {
   }
 }
 
+type CreateStep = 'creating' | 'saving' | null
+
+const STEP_LABEL: Record<Exclude<CreateStep, null>, string> = {
+  creating: '建立 Sheet 與 tab 結構中⋯',
+  saving: '寫入 Meta Sheet 中⋯',
+}
+
 export default function AdminDashboard({ token, onLogout, onEnterProject }: Props) {
   const svc = useMemo(() => getDataService(token), [token])
   const [projects, setProjects] = useState<ProjectConfig[]>([])
@@ -44,6 +51,8 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
   const [editingId, setEditingId] = useState<string | null>(null)
   const [showAdd, setShowAdd] = useState(false)
   const [saving, setSaving] = useState(false)
+  const [createStep, setCreateStep] = useState<CreateStep>(null)
+  const [warning, setWarning] = useState('')
 
   async function reload() {
     setLoading(true)
@@ -78,9 +87,10 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
 
   async function handleAdd(form: FormData) {
     setError('')
+    setWarning('')
     const id = form.id.trim()
-    if (!id || !form.name.trim() || !form.sheetId.trim()) {
-      setError('id、name、sheetId 為必填')
+    if (!id || !form.name.trim()) {
+      setError('id、name 為必填')
       return
     }
     if (projects.some(p => p.id === id)) {
@@ -91,6 +101,17 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
       setError('新增專案必須設定密碼')
       return
     }
+    if (form.type === 'series') {
+      const count = parseInt(form.episodeCount, 10)
+      if (!count || count < 1) {
+        setError('劇集集數必須 ≥ 1')
+        return
+      }
+      if (!form.episodePrefix.trim()) {
+        setError('劇集必須填集別前綴（例如 ep）')
+        return
+      }
+    }
     const dup = projects.find(p => p.passwordHash && bcrypt.compareSync(form.password, p.passwordHash))
     if (dup) {
       setError(`密碼已被專案「${dup.name}」使用，請改一組`)
@@ -100,13 +121,24 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
     try {
       const p = buildProject(form)
       p.passwordHash = bcrypt.hashSync(form.password, 10)
+
+      setCreateStep('creating')
+      const result = await svc.createProjectSheet(p)
+      p.sheetId = result.sheetId
+
+      setCreateStep('saving')
       await svc.createProject(p)
+
+      setWarning(
+        `Sheet 已自動建立於 Drive 根目錄，請手動拖入「00_Roughcut_Tracker」資料夾集中管理：${result.sheetUrl}`,
+      )
       setShowAdd(false)
       await reload()
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : String(e))
     } finally {
       setSaving(false)
+      setCreateStep(null)
     }
   }
 
@@ -164,12 +196,14 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
       </header>
 
       {error && <div style={s.errorBox}>{error}</div>}
+      {warning && <div style={s.warnBox}>{warning}</div>}
+      {createStep && <div style={s.progressBox}>{STEP_LABEL[createStep]}</div>}
 
       <section style={s.section}>
         <div style={s.sectionHeader}>
           <h2 style={s.sectionTitle}>新增專案</h2>
           {!showAdd && (
-            <button style={s.primaryBtn} onClick={() => { setShowAdd(true); setError('') }}>
+            <button style={s.primaryBtn} onClick={() => { setShowAdd(true); setError(''); setWarning('') }}>
               + 新增
             </button>
           )}
@@ -180,7 +214,7 @@ export default function AdminDashboard({ token, onLogout, onEnterProject }: Prop
             isNew
             saving={saving}
             onSubmit={handleAdd}
-            onCancel={() => { setShowAdd(false); setError('') }}
+            onCancel={() => { setShowAdd(false); setError(''); setWarning('') }}
           />
         )}
       </section>
@@ -304,16 +338,23 @@ function ProjectForm({
             <option value="film">電影</option>
           </select>
         </label>
-        <label style={{ ...s.field, gridColumn: '1 / -1' }}>
-          <span style={s.fieldLabel}>Sheet ID</span>
-          <input
-            style={s.input}
-            value={form.sheetId}
-            onChange={e => update('sheetId', e.target.value)}
-            placeholder="1J5Ld..."
-            required
-          />
-        </label>
+        {isNew ? (
+          <div style={{ ...s.field, gridColumn: '1 / -1' }}>
+            <span style={s.fieldLabel}>Sheet ID</span>
+            <div style={s.autoNote}>送出後自動建立 Sheet 並寫入 tabs/header，sheetId 由系統填入。</div>
+          </div>
+        ) : (
+          <label style={{ ...s.field, gridColumn: '1 / -1' }}>
+            <span style={s.fieldLabel}>Sheet ID</span>
+            <input
+              style={s.input}
+              value={form.sheetId}
+              onChange={e => update('sheetId', e.target.value)}
+              placeholder="1J5Ld..."
+              required
+            />
+          </label>
+        )}
         {form.type === 'series' && (
           <>
             <label style={s.field}>
@@ -381,6 +422,19 @@ const s: Record<string, React.CSSProperties> = {
   errorBox: {
     padding: '10px 14px', background: 'rgba(239,68,68,0.12)', color: 'var(--color-missing)',
     border: '1px solid var(--color-missing)', borderRadius: 8, marginBottom: 16, fontSize: 13,
+  },
+  warnBox: {
+    padding: '10px 14px', background: 'rgba(234,179,8,0.12)', color: '#FACC15',
+    border: '1px solid rgba(234,179,8,0.4)', borderRadius: 8, marginBottom: 16,
+    fontSize: 13, wordBreak: 'break-all',
+  },
+  progressBox: {
+    padding: '10px 14px', background: 'rgba(96,165,250,0.12)', color: '#93C5FD',
+    border: '1px solid rgba(147,197,253,0.4)', borderRadius: 8, marginBottom: 16, fontSize: 13,
+  },
+  autoNote: {
+    fontSize: 12, color: 'var(--text-secondary)', padding: '8px 10px',
+    background: '#111', border: '1px dashed var(--border)', borderRadius: 6,
   },
   section: { marginBottom: 32 },
   sectionHeader: {

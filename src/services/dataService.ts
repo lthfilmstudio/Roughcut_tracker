@@ -2,9 +2,16 @@ import type { SceneRow, SummaryRow } from '../types'
 import type { EpisodeStats } from '../lib/stats'
 import type { ProjectConfig } from '../config/projectConfig'
 
+export interface CreateSheetResult {
+  sheetId: string
+  movedToFolder: boolean
+  sheetUrl: string
+}
+
 export interface DataService {
   getProjects(): Promise<ProjectConfig[]>
   createProject(p: ProjectConfig): Promise<void>
+  createProjectSheet(p: ProjectConfig): Promise<CreateSheetResult>
   updateProject(p: ProjectConfig): Promise<void>
   deleteProject(id: string): Promise<void>
 
