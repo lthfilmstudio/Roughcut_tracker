@@ -432,7 +432,8 @@ const s: Record<string, React.CSSProperties> = {
   },
   tabBar: {
     display: 'flex', alignItems: 'center', gap: 4,
-    padding: '8px 24px', borderBottom: '1px solid var(--border)', overflow: 'hidden',
+    padding: '8px 40px', borderBottom: '1px solid var(--border)', overflow: 'hidden',
+    maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box',
   },
   scrollBtn: {
     background: 'transparent', border: 'none', color: 'var(--text-secondary)',
