@@ -123,9 +123,10 @@ a { color: inherit; text-decoration: none; }
 
   /* 列印用簡潔統計表 */
   .print-summary {
-    width: 100%;
+    width: calc(100% - 2pt);
     border-collapse: collapse;
     margin-bottom: 14px;
+    margin-right: 2pt;
     font-size: 10.5px;
   }
   .print-summary th,
@@ -146,11 +147,12 @@ a { color: inherit; text-decoration: none; }
 
   /* 主資料表格 */
   table.data-table {
-    width: 100% !important;
+    width: calc(100% - 2pt) !important;
     table-layout: fixed !important;
     border-collapse: collapse !important;
     font-size: 10px !important;
     page-break-inside: auto;
+    margin-right: 2pt;
   }
   /* 集數詳情頁欄寬（總和 100%，備註吃剩餘空間） */
   table.data-table th.pdf-col-sceneNum,
