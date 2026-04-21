@@ -1,5 +1,5 @@
 /* ==== 手機斷點 (<=768px) ==== */
-@media (max-width: 768px) {
+@media screen and (max-width: 768px) {
   /* 統計卡片：4 欄 → 2 欄 */
   .stat-grid-screen {
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
@@ -100,12 +100,12 @@
   }
 }
 
-@media (min-width: 769px) {
+@media screen and (min-width: 769px) {
   .only-mobile { display: none !important; }
 }
 
 /* ==== 手機更小螢幕 (<=480px)：statCard 單欄 ==== */
-@media (max-width: 480px) {
+@media screen and (max-width: 480px) {
   .stat-grid-screen {
     grid-template-columns: 1fr !important;
   }

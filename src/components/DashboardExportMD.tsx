@@ -138,9 +138,9 @@ export default function DashboardExportMD({
         { key: 'finePct', label: '已精剪%', render: ep => pctStr(ep.stats.finecutPct), total: pctStr(globalFinecutPct) },
         { key: 'roughSecs', label: '初剪時長', render: ep => ep.stats.roughcutSecs > 0 ? secsToHMS(ep.stats.roughcutSecs) : '—', total: secsToHMS(totals.roughcutSecs) },
         { key: 'fineSecs', label: '精剪時長', render: ep => ep.stats.finecutSecs > 0 ? secsToHMS(ep.stats.finecutSecs) : '—', total: secsToHMS(totals.finecutSecs) },
-        { key: 'roughScenes', label: '初剪場次', render: ep => String(ep.stats.roughcutScenes || '—'), total: String(totals.roughcutScenes || '—') },
-        { key: 'fineScenes', label: '精剪場次', render: ep => String(ep.stats.finecutScenes || '—'), total: String(totals.finecutScenes || '—') },
-        { key: 'totalScenes', label: '總場次', render: ep => String(ep.stats.totalScenes || '—'), total: String(totals.totalScenes || '—') },
+        { key: 'roughScenes', label: '初剪場次', render: ep => String(ep.stats.roughcutScenes), total: String(totals.roughcutScenes) },
+        { key: 'fineScenes', label: '精剪場次', render: ep => String(ep.stats.finecutScenes), total: String(totals.finecutScenes) },
+        { key: 'totalScenes', label: '總場次', render: ep => String(ep.stats.totalScenes), total: String(totals.totalScenes) },
         { key: 'roughPages', label: '初剪頁數', render: ep => ep.stats.roughcutPages > 0 ? ep.stats.roughcutPages.toFixed(1) : '—', total: totals.roughcutPages > 0 ? totals.roughcutPages.toFixed(1) : '—' },
         { key: 'avgPage', label: '頁均時長', render: ep => epAvgStr(ep.stats.roughcutSecs + ep.stats.finecutSecs, ep.stats.roughcutPages + ep.stats.finecutPages), total: globalAvgPageDur },
       ]

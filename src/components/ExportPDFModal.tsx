@@ -1,21 +1,40 @@
 import { useState } from 'react'
 
-interface FieldDef {
+export interface PdfFieldDef {
   key: string
   label: string
+  indent?: boolean
+}
+
+export interface PdfMode {
+  key: string
+  label: string
+  fieldDefs: PdfFieldDef[]
+  defaults: Record<string, boolean>
 }
 
 interface Props {
-  fieldDefs: FieldDef[]
-  initialOpts: Record<string, boolean>
+  modes: PdfMode[]
   onClose: () => void
-  onConfirm: (opts: Record<string, boolean>) => void
+  onConfirm: (modeKey: string, opts: Record<string, boolean>) => void
 }
 
-export default function ExportPDFModal({ fieldDefs, initialOpts, onClose, onConfirm }: Props) {
-  const [opts, setOpts] = useState<Record<string, boolean>>(initialOpts)
-  const toggle = (k: string) => setOpts(o => ({ ...o, [k]: !o[k] }))
-  const anyChecked = Object.values(opts).some(Boolean)
+export default function ExportPDFModal({ modes, onClose, onConfirm }: Props) {
+  const [modeKey, setModeKey] = useState<string>(modes[0].key)
+  const [optsByMode, setOptsByMode] = useState<Record<string, Record<string, boolean>>>(
+    Object.fromEntries(modes.map(m => [m.key, { ...m.defaults }])),
+  )
+  const currentMode = modes.find(m => m.key === modeKey) ?? modes[0]
+  const currentOpts = optsByMode[currentMode.key]
+
+  const toggle = (k: string) => {
+    setOptsByMode(prev => ({
+      ...prev,
+      [currentMode.key]: { ...prev[currentMode.key], [k]: !prev[currentMode.key][k] },
+    }))
+  }
+
+  const anyChecked = Object.values(currentOpts).some(Boolean)
 
   return (
     <div style={s.overlay} onClick={e => e.target === e.currentTarget && onClose()}>
@@ -25,13 +44,32 @@ export default function ExportPDFModal({ fieldDefs, initialOpts, onClose, onConf
           <button style={s.closeBtn} onClick={onClose}>✕</button>
         </div>
         <div style={s.body}>
-          <p style={s.label}>選擇要包含的欄位：</p>
+          {modes.length > 1 && (
+            <>
+              <p style={s.label}>選擇匯出類型：</p>
+              <div style={s.modeRow}>
+                {modes.map(m => (
+                  <button
+                    key={m.key}
+                    style={{ ...s.modeBtn, ...(m.key === modeKey ? s.modeBtnActive : {}) }}
+                    onClick={() => setModeKey(m.key)}
+                  >
+                    {m.label}
+                  </button>
+                ))}
+              </div>
+              <p style={{ ...s.label, marginTop: 16 }}>選擇要包含的欄位：</p>
+            </>
+          )}
+          {modes.length <= 1 && (
+            <p style={s.label}>選擇要包含的欄位：</p>
+          )}
           <div style={s.fieldList}>
-            {fieldDefs.map(f => (
-              <label key={f.key} style={s.checkRow}>
+            {currentMode.fieldDefs.map(f => (
+              <label key={f.key} style={{ ...s.checkRow, paddingLeft: f.indent ? 24 : 0 }}>
                 <input
                   type="checkbox"
-                  checked={!!opts[f.key]}
+                  checked={!!currentOpts[f.key]}
                   onChange={() => toggle(f.key)}
                   style={{ accentColor: '#fff', width: 14, height: 14 }}
                 />
@@ -48,7 +86,7 @@ export default function ExportPDFModal({ fieldDefs, initialOpts, onClose, onConf
             <button style={s.ghostBtn} onClick={onClose}>取消</button>
             <button
               style={{ ...s.btn, opacity: anyChecked ? 1 : 0.4, cursor: anyChecked ? 'pointer' : 'not-allowed' }}
-              onClick={() => anyChecked && onConfirm(opts)}
+              onClick={() => anyChecked && onConfirm(currentMode.key, currentOpts)}
               disabled={!anyChecked}
             >
               開始列印
@@ -79,6 +117,14 @@ const s: Record<string, React.CSSProperties> = {
   label: { fontSize: 12, color: '#666', margin: 0 },
   fieldList: { display: 'flex', flexDirection: 'column', gap: 10, marginTop: 12 },
   checkRow: { display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer' },
+  modeRow: { display: 'flex', gap: 8, marginTop: 10 },
+  modeBtn: {
+    flex: 1, padding: '8px 12px', background: 'transparent', color: '#888',
+    border: '1px solid #333', borderRadius: 6, fontSize: 12, cursor: 'pointer',
+  },
+  modeBtnActive: {
+    background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid #666',
+  },
   hint: {
     fontSize: 11, color: '#888', marginTop: 18, padding: '10px 12px',
     background: '#111', border: '1px solid #2A2A2A', borderRadius: 6,

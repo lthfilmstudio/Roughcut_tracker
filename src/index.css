@@ -247,4 +247,31 @@ a { color: inherit; text-decoration: none; }
 
   /* 螢幕版統計卡片列印時隱藏（改用 print-summary） */
   .stat-grid-screen { display: none !important; }
+
+  /* 全劇完整場次表（allScenes 模式） */
+  .pdf-allscenes-wrap section {
+    margin-bottom: 18px;
+  }
+  .pdf-allscenes-ep-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 0 0 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid #000;
+  }
+  .pdf-allscenes-ep-title {
+    font-size: 13px !important;
+    font-weight: 700 !important;
+    color: #000 !important;
+  }
+  .pdf-allscenes-ep-meta {
+    font-size: 9.5px !important;
+    color: #333 !important;
+  }
+  .pdf-allscenes-empty {
+    font-size: 10px;
+    color: #666;
+    margin: 4px 0 0;
+  }
 }

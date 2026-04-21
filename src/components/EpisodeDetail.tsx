@@ -362,10 +362,14 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
 
       {showExportPDF && (
         <ExportPDFModal
-          fieldDefs={EP_PDF_FIELDS}
-          initialOpts={pdfOpts}
+          modes={[{
+            key: 'summary',
+            label: '場次明細',
+            fieldDefs: EP_PDF_FIELDS,
+            defaults: pdfOpts,
+          }]}
           onClose={() => setShowExportPDF(false)}
-          onConfirm={(opts) => {
+          onConfirm={(_modeKey, opts) => {
             setPdfOpts(opts)
             setShowExportPDF(false)
             window.setTimeout(() => window.print(), 80)
