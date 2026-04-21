@@ -179,8 +179,6 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
   }
 
   const stats = computeEpisodeStats(scenes)
-  const roughcutPct = Math.round(stats.roughcutPct * 100)
-  const finecutPct = Math.round(stats.finecutPct * 100)
   const printDate = new Date().toLocaleDateString('zh-TW', {
     timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
   })
@@ -388,9 +386,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
         <ExportMD
           episode={episode}
           scenes={scenes}
-          roughcutPct={roughcutPct}
-          finecutPct={finecutPct}
-          totalDuration={secsToHMS(stats.roughcutSecs)}
+          stats={stats}
           onClose={() => setShowExportMD(false)}
         />
       )}

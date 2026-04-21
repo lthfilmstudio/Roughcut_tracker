@@ -117,18 +117,17 @@ export default function DashboardExportMD({
 
     if (summaryOpts.summary) {
       const totalSecs = totals.roughcutSecs + totals.finecutSecs
+      const combinedScenes = totals.roughcutScenes + totals.finecutScenes
+      const combinedPct = totals.validScenes > 0 ? combinedScenes / totals.validScenes : 0
       lines.push('## 全劇合計')
       lines.push('')
-      lines.push('| 項目 | 數值 |')
-      lines.push('|------|------|')
-      lines.push(`| 已初剪 | ${pctStr(globalRoughcutPct)}（${totals.roughcutScenes} / ${totals.validScenes} 場）|`)
-      lines.push(`| 已精剪 | ${pctStr(globalFinecutPct)}（${totals.finecutScenes} / ${totals.validScenes} 場）|`)
-      lines.push(`| 初剪時長 | ${secsToHMS(totals.roughcutSecs)} |`)
-      lines.push(`| 精剪時長 | ${secsToHMS(totals.finecutSecs)} |`)
-      lines.push(`| 總長度 | ${secsToHMS(totalSecs)} |`)
-      lines.push(`| 總場次 | ${totals.totalScenes} |`)
-      lines.push(`| 初剪頁數 | ${totals.roughcutPages.toFixed(1)} |`)
-      lines.push(`| 頁均時長 | ${globalAvgPageDur} |`)
+      lines.push('| 項目 | 時長 | 場次 | 百分比 |')
+      lines.push('|------|------|------|------|')
+      lines.push(`| 已初剪 | ${secsToHMS(totals.roughcutSecs)} | ${totals.roughcutScenes} / ${totals.validScenes} | ${pctStr(globalRoughcutPct)} |`)
+      lines.push(`| 已精剪 | ${secsToHMS(totals.finecutSecs)} | ${totals.finecutScenes} / ${totals.validScenes} | ${pctStr(globalFinecutPct)} |`)
+      lines.push(`| 總計 | ${secsToHMS(totalSecs)} | ${combinedScenes} / ${totals.validScenes} | ${pctStr(combinedPct)} |`)
+      lines.push('')
+      lines.push(`**初剪頁數：** ${totals.roughcutPages.toFixed(1)} 頁　・　頁均時長 ${globalAvgPageDur}`)
       lines.push('')
     }
 

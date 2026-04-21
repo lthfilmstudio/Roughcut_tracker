@@ -171,7 +171,7 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                   <td>{totals.validScenes > 0 ? (((totals.roughcutScenes + totals.finecutScenes) / totals.validScenes) * 100).toFixed(1) : '0.0'}%</td>
                 </tr>
                 <tr>
-                  <td>總頁數（已初剪）</td>
+                  <td>初剪頁數</td>
                   <td colSpan={3}>{totals.roughcutPages.toFixed(1)} 頁　・　頁均時長 {globalAvgPageDur}</td>
                 </tr>
               </tbody>
@@ -207,14 +207,14 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                 </div>
               ))}
               <div style={s.statCard}>
-                <p style={s.statLabel}>總頁數</p>
+                <p style={s.statLabel}>初剪頁數</p>
                 <div style={s.statRow}>
                   <p style={s.statValue}>
                     {totals.roughcutPages.toFixed(1)}
                     <span style={s.statUnit}>頁</span>
                   </p>
                   <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
-                    <span style={s.statSubValue}>已初剪頁數</span>
+                    <span style={s.statSubValue}>頁均 {globalAvgPageDur}</span>
                   </div>
                 </div>
               </div>

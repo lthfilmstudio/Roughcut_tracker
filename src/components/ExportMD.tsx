@@ -1,12 +1,12 @@
 import { useState } from 'react'
 import type { SceneRow } from '../types'
+import type { EpisodeStats } from '../lib/stats'
+import { secsToHMS } from '../lib/stats'
 
 interface Props {
   episode: string
   scenes: SceneRow[]
-  roughcutPct: number
-  finecutPct: number
-  totalDuration: string
+  stats: EpisodeStats
   onClose: () => void
 }
 
@@ -18,6 +18,7 @@ interface ExportOptions {
   pages: boolean
   date: boolean
   status: boolean
+  missingShots: boolean
   notes: boolean
 }
 
@@ -29,6 +30,7 @@ const DEFAULT_OPTIONS: ExportOptions = {
   pages: true,
   date: false,
   status: true,
+  missingShots: false,
   notes: false,
 }
 
@@ -37,7 +39,7 @@ function todayStr() {
   return `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function ExportMD({ episode, scenes, roughcutPct, finecutPct, totalDuration, onClose }: Props) {
+export default function ExportMD({ episode, scenes, stats, onClose }: Props) {
   const [opts, setOpts] = useState<ExportOptions>(DEFAULT_OPTIONS)
   const toggle = (k: keyof ExportOptions) => setOpts(o => ({ ...o, [k]: !o[k] }))
 
@@ -49,14 +51,18 @@ export default function ExportMD({ episode, scenes, roughcutPct, finecutPct, tot
     lines.push('')
 
     if (opts.summary) {
+      const totalSecs = stats.roughcutSecs + stats.finecutSecs
+      const combinedScenes = stats.roughcutScenes + stats.finecutScenes
+      const combinedPct = stats.validScenes > 0 ? combinedScenes / stats.validScenes : 0
       lines.push('## 統計摘要')
       lines.push('')
-      lines.push(`| 項目 | 數值 |`)
-      lines.push(`|------|------|`)
-      lines.push(`| 已初剪 | ${roughcutPct}% |`)
-      lines.push(`| 已精剪 | ${finecutPct}% |`)
-      lines.push(`| 初剪時長 | ${totalDuration} |`)
-      lines.push(`| 總場次 | ${scenes.length} |`)
+      lines.push('| 項目 | 時長 | 場次 | 百分比 |')
+      lines.push('|------|------|------|------|')
+      lines.push(`| 已初剪 | ${secsToHMS(stats.roughcutSecs)} | ${stats.roughcutScenes} / ${stats.validScenes} | ${(stats.roughcutPct * 100).toFixed(1)}% |`)
+      lines.push(`| 已精剪 | ${secsToHMS(stats.finecutSecs)} | ${stats.finecutScenes} / ${stats.validScenes} | ${(stats.finecutPct * 100).toFixed(1)}% |`)
+      lines.push(`| 總計 | ${secsToHMS(totalSecs)} | ${combinedScenes} / ${stats.validScenes} | ${(combinedPct * 100).toFixed(1)}% |`)
+      lines.push('')
+      lines.push(`**總頁數：** ${stats.totalPages.toFixed(1)} 頁（${stats.validScenes} 場，不含整場刪除）`)
       lines.push('')
     }
 
@@ -69,6 +75,7 @@ export default function ExportMD({ episode, scenes, roughcutPct, finecutPct, tot
         { key: 'pages', label: '頁數', enabled: opts.pages },
         { key: 'roughcutDate', label: '日期', enabled: opts.date },
         { key: 'status', label: '狀態', enabled: opts.status },
+        { key: 'missingShots', label: '缺鏡', enabled: opts.missingShots },
         { key: 'notes', label: '備註', enabled: opts.notes },
       ]
       const cols = allCols.filter(c => c.enabled)
@@ -107,6 +114,7 @@ export default function ExportMD({ episode, scenes, roughcutPct, finecutPct, tot
     { key: 'pages', label: '頁數', indent: true },
     { key: 'date', label: '初剪日期', indent: true },
     { key: 'status', label: '狀態', indent: true },
+    { key: 'missingShots', label: '缺鏡', indent: true },
     { key: 'notes', label: '備註', indent: true },
   ]
 
