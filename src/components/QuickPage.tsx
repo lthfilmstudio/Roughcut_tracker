@@ -1,6 +1,6 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { SceneRow } from '../types'
-import { formatRoughcutLength, formatDate, normalizeScene, todayYMD, computeEpisodeStats } from '../lib/stats'
+import { formatRoughcutLength, formatDate, normalizeScene, todayYMD, computeEpisodeStats, parseSecs, secsToHMS, finecutMetaKey } from '../lib/stats'
 import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
 import { getDataService } from '../services'
 import { useProject } from '../contexts/ProjectContext'
@@ -45,6 +45,7 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
   const [editing, setEditing] = useState<{ rowIndex: number | null; draft: SceneRow } | null>(null)
   const [saving, setSaving] = useState(false)
   const [hint, setHint] = useState('')
+  const [finecutEditor, setFinecutEditor] = useState<null | { raw: string }>(null)
 
   const scenes = ep ? (cache.scenes?.[ep] ?? []) : []
 
@@ -198,6 +199,24 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
 
   // -------- Scene list --------
   const stats = computeEpisodeStats(scenes)
+  const finecutKey = finecutMetaKey(ep)
+  const finecutTotalRaw = cache.meta[finecutKey] ?? ''
+  const finecutTotalSecs = parseSecs(finecutTotalRaw)
+
+  async function handleSaveFinecutTotal(raw: string) {
+    setSaving(true)
+    try {
+      const cleaned = raw.trim() ? formatRoughcutLength(raw) : ''
+      await cache.setMetaValue(finecutKey, cleaned)
+      flash('✓ 已儲存精剪總長')
+      setFinecutEditor(null)
+    } catch {
+      // already alerted
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div style={s.page}>
       <header style={s.header}>
@@ -212,6 +231,18 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
         </div>
         <span style={{ width: 60 }} />
       </header>
+
+      {/* 精剪總長 bar */}
+      <button
+        style={s.finecutBar}
+        onClick={() => setFinecutEditor({ raw: finecutTotalRaw })}
+      >
+        <span style={s.finecutBarLabel}>精剪總長</span>
+        <span style={s.finecutBarValue}>
+          {finecutTotalSecs > 0 ? secsToHMS(finecutTotalSecs) : '—'}
+        </span>
+        <span style={s.finecutBarEdit}>✏️ 編輯</span>
+      </button>
 
       {/* Filter chips */}
       <div style={s.filterBar}>
@@ -285,9 +316,71 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
         />
       )}
 
+      {/* 精剪總長 bottom sheet */}
+      {finecutEditor && (
+        <FinecutSheet
+          initialValue={finecutEditor.raw}
+          saving={saving}
+          onSave={handleSaveFinecutTotal}
+          onClose={() => setFinecutEditor(null)}
+        />
+      )}
+
       {/* Saved hint */}
       {hint && <div style={s.hint}>{hint}</div>}
     </div>
+  )
+}
+
+interface FinecutSheetProps {
+  initialValue: string
+  saving: boolean
+  onSave: (raw: string) => Promise<void>
+  onClose: () => void
+}
+
+function FinecutSheet({ initialValue, saving, onSave, onClose }: FinecutSheetProps) {
+  const [draft, setDraft] = useState(initialValue)
+  useEffect(() => { setDraft(initialValue) }, [initialValue])
+
+  return (
+    <>
+      <div style={s.scrim} onClick={onClose} />
+      <div style={s.sheet}>
+        <div style={s.grab} />
+        <div style={s.sheetHead}>
+          <div>
+            <div style={s.sheetTitle}>精剪總長</div>
+            <div style={s.sheetSub}>整集剪完後的實際長度</div>
+          </div>
+          <button style={s.closeBtn} onClick={onClose}>✕</button>
+        </div>
+
+        <div style={s.sheetBody}>
+          <div style={s.field}>
+            <label style={s.label}>長度</label>
+            <input
+              style={s.input}
+              inputMode="numeric"
+              placeholder="輸入數字即可"
+              autoFocus
+              value={draft}
+              disabled={saving}
+              onChange={e => setDraft(e.target.value)}
+              onBlur={e => setDraft(e.target.value ? formatRoughcutLength(e.target.value) : '')}
+            />
+            <div style={s.help}>例：打 4523 → 0:45:23。留空表示尚未輸入。</div>
+          </div>
+        </div>
+
+        <div style={s.sheetFoot}>
+          <button style={s.btnGhost} onClick={onClose} disabled={saving}>取消</button>
+          <button style={s.btnPrimary} onClick={() => onSave(draft)} disabled={saving}>
+            {saving ? '儲存中⋯' : '儲存'}
+          </button>
+        </div>
+      </div>
+    </>
   )
 }
 
@@ -467,6 +560,16 @@ const s: Record<string, React.CSSProperties> = {
     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
   },
   headerSub: { fontSize: 11, color: 'var(--text-secondary)', marginTop: 2 },
+  finecutBar: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    width: '100%', padding: '10px 16px',
+    background: '#1C1C1C', border: 'none',
+    borderBottom: '1px solid var(--border)',
+    color: 'var(--text-primary)', cursor: 'pointer', textAlign: 'left',
+  },
+  finecutBarLabel: { fontSize: 11, color: 'var(--text-secondary)' },
+  finecutBarValue: { fontSize: 15, fontWeight: 600, color: 'var(--text-primary)' },
+  finecutBarEdit: { marginLeft: 'auto', fontSize: 11, color: '#888' },
   filterBar: {
     display: 'flex', gap: 8, overflowX: 'auto', padding: '8px 14px 12px',
     borderBottom: '1px solid var(--border)', scrollbarWidth: 'none',

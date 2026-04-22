@@ -86,9 +86,10 @@ export interface EpisodeStats {
   finecutScenes: number   // 狀態 = 已精剪
   roughcutPct: number     // 0–1
   finecutPct: number      // 0–1
-  roughcutSecs: number    // 已初剪場次的時長加總
-  finecutSecs: number     // 已精剪場次的時長加總
+  roughcutSecs: number    // 已初剪場次的時長加總（上一階段進度參考）
+  finecutSecs: number     // 已精剪場次的時長加總（上一階段進度參考）
   totalSecs: number       // 初剪 + 精剪
+  roughcutTotalSecs: number // 所有有效場次 roughcutLength 加總（初剪原始總長）
   roughcutPages: number   // 已初剪場次的頁數加總
   finecutPages: number    // 已精剪場次的頁數加總
   totalPages: number      // 所有有效場次（扣除整場刪除）的頁數加總
@@ -101,6 +102,7 @@ export function computeEpisodeStats(scenes: SceneRow[]): EpisodeStats {
 
   const roughcutSecs = rough.reduce((a, r) => a + parseSecs(r.roughcutLength), 0)
   const finecutSecs = fine.reduce((a, r) => a + parseSecs(r.roughcutLength), 0)
+  const roughcutTotalSecs = valid.reduce((a, r) => a + parseSecs(r.roughcutLength), 0)
   const roughcutPages = rough.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
   const finecutPages = fine.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
   const totalPages = valid.reduce((a, r) => a + (parseFloat(r.pages) || 0), 0)
@@ -116,10 +118,15 @@ export function computeEpisodeStats(scenes: SceneRow[]): EpisodeStats {
     roughcutSecs,
     finecutSecs,
     totalSecs: roughcutSecs + finecutSecs,
+    roughcutTotalSecs,
     roughcutPages,
     finecutPages,
     totalPages,
   }
+}
+
+export function finecutMetaKey(tab: string): string {
+  return `${tab}.finecutTotalLength`
 }
 
 export function todayYMD(): string {

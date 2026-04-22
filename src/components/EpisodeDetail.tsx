@@ -3,6 +3,7 @@ import { getDataService } from '../services'
 import type { SceneRow } from '../types'
 import {
   secsToHMS, normalizeScene, computeEpisodeStats,
+  finecutMetaKey,
 } from '../lib/stats'
 import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
 import type { EpisodesCache } from '../hooks/useEpisodesCache'
@@ -13,6 +14,7 @@ import ErrorView from './ErrorView'
 import ExportPDFModal from './ExportPDFModal'
 import SceneTable, { EP_COL_DEFS, EP_PDF_FIELDS, EP_PDF_DEFAULTS } from './SceneTable'
 import SummaryBar from './SummaryBar'
+import FinecutTotalInline from './FinecutTotalInline'
 import { STUDIO_NAME } from '../config/sheets'
 import { getTabNames, projectTitle, hasSummaryTab } from '../config/projectConfig'
 import { useProject } from '../contexts/ProjectContext'
@@ -185,18 +187,27 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
   const totalSecs = stats.roughcutSecs + stats.finecutSecs
   const combinedPct = stats.validScenes > 0 ? (stats.roughcutScenes + stats.finecutScenes) / stats.validScenes : 0
 
+  const finecutKey = finecutMetaKey(episode)
+  const finecutTotalRaw = cache.meta[finecutKey] ?? ''
+
+  async function handleSaveFinecutTotal(next: string) {
+    await cache.setMetaValue(finecutKey, next)
+  }
+
   return (
     <div style={s.page}>
       {/* Nav */}
       <nav style={s.nav} className="no-print rt-nav">
-        {IS_FILM ? (
-          <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
-        ) : (
-          <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回總覽'}</button>
-        )}
-        <div style={s.navTitleBox}>
-          <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
-          <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
+        <div style={s.navInner}>
+          {IS_FILM ? (
+            <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
+          ) : (
+            <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回總覽'}</button>
+          )}
+          <div style={s.navTitleBox}>
+            <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
+            <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
+          </div>
         </div>
       </nav>
 
@@ -217,6 +228,25 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
             </span>
             <span style={s.quickBannerArrow}>→</span>
           </button>
+        </div>
+      )}
+
+      {/* 長度總覽（初剪原始總長 + 精剪總長 inline 編輯） */}
+      {!loading && !error && (
+        <div style={s.lengthBarWrap} className="no-print rt-length-bar-wrap">
+          <div style={s.lengthBar}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>初剪原始總長</span>
+              <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+                {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
+              </span>
+            </div>
+            <div style={s.lengthSep} />
+            <FinecutTotalInline
+              value={finecutTotalRaw}
+              onSave={handleSaveFinecutTotal}
+            />
+          </div>
         </div>
       )}
 
@@ -409,9 +439,13 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: 'var(--bg)' },
   nav: {
+    borderBottom: '1px solid var(--border)',
+  },
+  navInner: {
     position: 'relative',
     display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-    padding: '16px 32px', borderBottom: '1px solid var(--border)',
+    padding: '16px 40px',
+    maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box',
   },
   navTitleBox: {
     position: 'absolute', left: '50%', top: '50%',
@@ -453,6 +487,13 @@ const s: Record<string, React.CSSProperties> = {
   },
   main: { padding: '20px 40px', maxWidth: 1400, margin: '0 auto' },
   quickBannerWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
+  lengthBarWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
+  lengthBar: {
+    display: 'flex', alignItems: 'center', gap: 24,
+    background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
+    padding: '14px 20px',
+  },
+  lengthSep: { width: 1, alignSelf: 'stretch', background: '#2A2A2A' },
   quickBanner: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: '100%', padding: '14px 18px',

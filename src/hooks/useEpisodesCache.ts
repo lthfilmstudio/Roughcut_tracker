@@ -7,19 +7,23 @@ import { useProject } from '../contexts/ProjectContext'
 import type { SceneRow } from '../types'
 
 export type EpisodesMap = Record<string, SceneRow[]>
+export type MetaMap = Record<string, string>
 
 export interface EpisodesCache {
   scenes: EpisodesMap | null
+  meta: MetaMap
   loading: boolean
   error: string
   reload: () => Promise<void>
   setEpisodeScenes: (ep: string, updater: (prev: SceneRow[]) => SceneRow[]) => SceneRow[]
+  setMetaValue: (key: string, value: string) => Promise<void>
 }
 
 export function useEpisodesCache(token: string | null): EpisodesCache {
   const { project } = useProject()
   const episodes = useMemo(() => getTabNames(project), [project])
   const [scenes, setScenes] = useState<EpisodesMap | null>(null)
+  const [meta, setMeta] = useState<MetaMap>({})
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const loadedKeyRef = useRef<string | null>(null)
@@ -30,7 +34,10 @@ export function useEpisodesCache(token: string | null): EpisodesCache {
     setError('')
     try {
       const svc = getDataService(token)
-      const batch = await svc.fetchEpisodesBatch(project, episodes)
+      const [batch, metaMap] = await Promise.all([
+        svc.fetchEpisodesBatch(project, episodes),
+        svc.fetchMeta(project),
+      ])
       const normalized: EpisodesMap = {}
       const rewriteTargets: { ep: string; sorted: SceneRow[] }[] = []
       for (const ep of episodes) {
@@ -47,6 +54,7 @@ export function useEpisodesCache(token: string | null): EpisodesCache {
         }
       }
       setScenes(normalized)
+      setMeta(metaMap)
       loadedKeyRef.current = `${token}|${project.id}`
 
       for (const { ep, sorted } of rewriteTargets) {
@@ -67,6 +75,7 @@ export function useEpisodesCache(token: string | null): EpisodesCache {
   useEffect(() => {
     if (!token) {
       setScenes(null)
+      setMeta({})
       loadedKeyRef.current = null
       return
     }
@@ -88,5 +97,19 @@ export function useEpisodesCache(token: string | null): EpisodesCache {
     [],
   )
 
-  return { scenes, loading, error, reload: load, setEpisodeScenes }
+  const setMetaValue = useCallback(
+    async (key: string, value: string): Promise<void> => {
+      if (!token) return
+      setMeta(prev => ({ ...prev, [key]: value }))
+      try {
+        await getDataService(token).setMeta(project, key, value)
+      } catch (e) {
+        alert('儲存失敗：' + (e instanceof Error ? e.message : String(e)))
+        throw e
+      }
+    },
+    [token, project],
+  )
+
+  return { scenes, meta, loading, error, reload: load, setEpisodeScenes, setMetaValue }
 }

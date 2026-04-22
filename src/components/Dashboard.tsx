@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { secsToHMS, computeEpisodeStats } from '../lib/stats'
+import { secsToHMS, computeEpisodeStats, parseSecs, finecutMetaKey } from '../lib/stats'
 import type { EpisodeStats } from '../lib/stats'
 import type { EpisodesCache } from '../hooks/useEpisodesCache'
 import DashboardExportMD from './DashboardExportMD'
@@ -45,8 +45,8 @@ const DASH_COL_DEFS: { key: string; label: string }[] = [
   { key: 'episode', label: '集數' },
   { key: 'roughPct', label: '已初剪%' },
   { key: 'finePct', label: '已精剪%' },
-  { key: 'roughSecs', label: '初剪時長' },
-  { key: 'fineSecs', label: '精剪時長' },
+  { key: 'roughTotalSecs', label: '初剪原始總長' },
+  { key: 'fineTotalSecs', label: '精剪總長' },
   { key: 'roughScenes', label: '初剪場次' },
   { key: 'fineScenes', label: '精剪場次' },
   { key: 'totalScenes', label: '總場次' },
@@ -100,7 +100,7 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
   const [pdfScenesOpts, setPdfScenesOpts] = useState<Record<string, boolean>>(DASH_PDF_SCENES_DEFAULTS)
   const [printMode, setPrintMode] = useState<'summary' | 'allScenes'>('summary')
 
-  const { scenes, loading, error } = cache
+  const { scenes, meta, loading, error } = cache
 
   const eps = useMemo<EpisodeView[]>(() => {
     if (!scenes) return []
@@ -108,6 +108,14 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
       .sort()
       .map(ep => ({ episode: ep, stats: computeEpisodeStats(scenes[ep]) }))
   }, [scenes])
+
+  const finecutTotalSecsByEp = useMemo<Record<string, number>>(() => {
+    const out: Record<string, number> = {}
+    for (const e of eps) {
+      out[e.episode] = parseSecs(meta[finecutMetaKey(e.episode)] ?? '')
+    }
+    return out
+  }, [eps, meta])
 
   const totals = eps.reduce(
     (acc, e) => ({
@@ -117,10 +125,12 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
       finecutScenes: acc.finecutScenes + e.stats.finecutScenes,
       roughcutSecs: acc.roughcutSecs + e.stats.roughcutSecs,
       finecutSecs: acc.finecutSecs + e.stats.finecutSecs,
+      roughcutTotalSecs: acc.roughcutTotalSecs + e.stats.roughcutTotalSecs,
+      finecutTotalSecs: acc.finecutTotalSecs + (finecutTotalSecsByEp[e.episode] ?? 0),
       roughcutPages: acc.roughcutPages + e.stats.roughcutPages,
       finecutPages: acc.finecutPages + e.stats.finecutPages,
     }),
-    { totalScenes: 0, validScenes: 0, roughcutScenes: 0, finecutScenes: 0, roughcutSecs: 0, finecutSecs: 0, roughcutPages: 0, finecutPages: 0 },
+    { totalScenes: 0, validScenes: 0, roughcutScenes: 0, finecutScenes: 0, roughcutSecs: 0, finecutSecs: 0, roughcutTotalSecs: 0, finecutTotalSecs: 0, roughcutPages: 0, finecutPages: 0 },
   )
 
   const globalRoughcutPct = totals.validScenes > 0 ? totals.roughcutScenes / totals.validScenes : 0
@@ -136,11 +146,13 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
   return (
     <div style={s.page}>
       <nav style={s.nav} className="no-print rt-nav">
-        <div style={s.navTitleBox}>
-          <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
-          <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
+        <div style={s.navInner}>
+          <div style={s.navTitleBox}>
+            <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
+            <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
+          </div>
+          <button style={s.logoutBtn} onClick={onLogout}>{logoutLabel}</button>
         </div>
-        <button style={s.logoutBtn} onClick={onLogout}>{logoutLabel}</button>
       </nav>
 
       <main style={s.main} className="rt-main">
@@ -164,6 +176,26 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
               </span>
               <span style={s.quickBannerArrow}>→</span>
             </button>
+
+            {/* 全劇長度總覽（初剪原始總長 + 精剪總長，各集加總） */}
+            <div style={s.lengthBar} className="no-print">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>全劇初剪原始總長</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}
+                </span>
+              </div>
+              <div style={s.lengthSep} />
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>全劇精剪總長</span>
+                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+                  {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}
+                </span>
+              </div>
+              <div style={{ marginLeft: 'auto', fontSize: 11, color: '#555' }}>
+                各集精剪總長請進入該集編輯
+              </div>
+            </div>
 
             {/* 列印頁首 */}
             <div className="print-only print-header">
@@ -202,6 +234,10 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                   <td>{secsToHMS(totals.roughcutSecs + totals.finecutSecs)}</td>
                   <td>{totals.roughcutScenes + totals.finecutScenes} / {totals.validScenes}</td>
                   <td>{totals.validScenes > 0 ? (((totals.roughcutScenes + totals.finecutScenes) / totals.validScenes) * 100).toFixed(1) : '0.0'}%</td>
+                </tr>
+                <tr>
+                  <td>初剪原始總長</td>
+                  <td colSpan={3}>{totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}　・　全劇精剪總長 {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}</td>
                 </tr>
                 <tr>
                   <td>初剪頁數</td>
@@ -300,7 +336,8 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                       </div>
                     </div>
                     <div className="mobile-card-meta" style={{ fontSize: 11 }}>
-                      <span>時長 {secsToHMS(st.roughcutSecs + st.finecutSecs)}</span>
+                      <span>初剪 {st.roughcutTotalSecs > 0 ? secsToHMS(st.roughcutTotalSecs) : '—'}</span>
+                      <span>精剪 {(finecutTotalSecsByEp[row.episode] ?? 0) > 0 ? secsToHMS(finecutTotalSecsByEp[row.episode]) : '—'}</span>
                       <span>頁數 {st.roughcutPages > 0 ? st.roughcutPages.toFixed(1) : '—'}</span>
                     </div>
                   </div>
@@ -329,7 +366,8 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                   </div>
                 </div>
                 <div className="mobile-card-meta" style={{ fontSize: 11 }}>
-                  <span>總時長 {secsToHMS(totals.roughcutSecs + totals.finecutSecs)}</span>
+                  <span>初剪 {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}</span>
+                  <span>精剪 {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}</span>
                   <span>頁均 {globalAvgPageDur}</span>
                 </div>
               </div>
@@ -348,7 +386,8 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                         已初剪 {(st.roughcutPct * 100).toFixed(1)}%　・
                         已精剪 {(st.finecutPct * 100).toFixed(1)}%　・
                         場次 {st.totalScenes}　・
-                        時長 {secsToHMS(st.roughcutSecs + st.finecutSecs)}
+                        初剪 {st.roughcutTotalSecs > 0 ? secsToHMS(st.roughcutTotalSecs) : '—'}　・
+                        精剪 {(finecutTotalSecsByEp[ep.episode] ?? 0) > 0 ? secsToHMS(finecutTotalSecsByEp[ep.episode]) : '—'}
                       </span>
                     </div>
                     {epScenes.length === 0 ? (
@@ -408,6 +447,7 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                       : '—'
                     const isHovered = hoveredEp === row.episode
                     const rowBg = hoveredRow === i ? '#1E1E1E' : (i % 2 === 0 ? 'var(--card-bg)' : '#161616')
+                    const epFineTotalSecs = finecutTotalSecsByEp[row.episode] ?? 0
                     return (
                       <tr
                         key={row.episode}
@@ -426,8 +466,8 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                         </td>
                         <td style={s.td} className="pdf-col-roughPct">{roughPct}%</td>
                         <td style={s.td} className="pdf-col-finePct">{finePct}%</td>
-                        <td style={s.td} className="pdf-col-roughSecs">{st.roughcutSecs > 0 ? secsToHMS(st.roughcutSecs) : '—'}</td>
-                        <td style={s.td} className="pdf-col-fineSecs">{st.finecutSecs > 0 ? secsToHMS(st.finecutSecs) : '—'}</td>
+                        <td style={s.td} className="pdf-col-roughTotalSecs">{st.roughcutTotalSecs > 0 ? secsToHMS(st.roughcutTotalSecs) : '—'}</td>
+                        <td style={s.td} className="pdf-col-fineTotalSecs">{epFineTotalSecs > 0 ? secsToHMS(epFineTotalSecs) : '—'}</td>
                         <td style={s.td} className="pdf-col-roughScenes">{st.roughcutScenes}</td>
                         <td style={s.td} className="pdf-col-fineScenes">{st.finecutScenes}</td>
                         <td style={s.td} className="pdf-col-totalScenes">{st.totalScenes}</td>
@@ -441,8 +481,8 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
                     <td className="pdf-col-episode" style={{ ...s.td, fontWeight: 700, color: 'var(--text-primary)' }}>全劇合計</td>
                     <td className="pdf-col-roughPct" style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalRoughcutPct * 100).toFixed(1)}%</td>
                     <td className="pdf-col-finePct" style={{ ...s.td, fontWeight: 600, color: 'var(--text-primary)' }}>{(globalFinecutPct * 100).toFixed(1)}%</td>
-                    <td className="pdf-col-roughSecs" style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.roughcutSecs)}</td>
-                    <td className="pdf-col-fineSecs" style={{ ...s.td, fontWeight: 600 }}>{secsToHMS(totals.finecutSecs)}</td>
+                    <td className="pdf-col-roughTotalSecs" style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}</td>
+                    <td className="pdf-col-fineTotalSecs" style={{ ...s.td, fontWeight: 600 }}>{totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}</td>
                     <td className="pdf-col-roughScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.roughcutScenes}</td>
                     <td className="pdf-col-fineScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.finecutScenes}</td>
                     <td className="pdf-col-totalScenes" style={{ ...s.td, fontWeight: 600 }}>{totals.totalScenes}</td>
@@ -521,9 +561,13 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
 const s: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: 'var(--bg)' },
   nav: {
+    borderBottom: '1px solid var(--border)',
+  },
+  navInner: {
     position: 'relative',
     display: 'flex', justifyContent: 'flex-end', alignItems: 'center',
-    padding: '16px 32px', borderBottom: '1px solid var(--border)',
+    padding: '16px 40px',
+    maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box',
   },
   navTitleBox: {
     position: 'absolute', left: '50%', top: '50%',
@@ -583,6 +627,12 @@ const s: Record<string, React.CSSProperties> = {
     display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2,
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
+  lengthBar: {
+    display: 'flex', alignItems: 'center', gap: 24,
+    background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
+    padding: '14px 20px', marginBottom: 16,
+  },
+  lengthSep: { width: 1, alignSelf: 'stretch', background: '#2A2A2A' },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {

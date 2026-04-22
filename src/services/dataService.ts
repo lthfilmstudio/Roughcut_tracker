@@ -33,4 +33,8 @@ export interface DataService {
     project: ProjectConfig,
     items: { ep: string; stats: EpisodeStats }[],
   ): Promise<void>
+
+  ensureMetaTab(project: ProjectConfig): Promise<void>
+  fetchMeta(project: ProjectConfig): Promise<Record<string, string>>
+  setMeta(project: ProjectConfig, key: string, value: string): Promise<void>
 }

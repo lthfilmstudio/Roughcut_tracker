@@ -8,6 +8,8 @@ import { secsToHMS, normalizeScene } from '../lib/stats'
 const API_ROOT = 'https://sheets.googleapis.com/v4/spreadsheets'
 const META_TAB = 'Projects'
 const META_RANGE = `${META_TAB}!A2:H`
+const PROJECT_META_TAB = '_meta'
+const PROJECT_META_HEADER = ['key', 'value']
 
 const SCENE_HEADER = [
   '場次', '初剪長度', '頁數', '初剪日期',
@@ -122,7 +124,11 @@ export class GoogleSheetsService implements DataService {
   async createProjectSheet(p: ProjectConfig): Promise<CreateSheetResult> {
     const sceneTabs = getTabNames(p)
     if (!sceneTabs.length) throw new Error('無法決定 tab 結構，請確認 type / episodeCount / episodePrefix')
-    const allTabs = hasSummaryTab(p) ? [...sceneTabs, 'Summary'] : sceneTabs
+    const allTabs = [
+      ...sceneTabs,
+      ...(hasSummaryTab(p) ? ['Summary'] : []),
+      PROJECT_META_TAB,
+    ]
     const title = `Roughcut Tracker_${p.name}`
 
     const createRes = await fetch(API_ROOT, {
@@ -167,6 +173,12 @@ export class GoogleSheetsService implements DataService {
         values: epLabels,
       })
     }
+
+    data.push({
+      range: `${PROJECT_META_TAB}!A1:B1`,
+      majorDimension: 'ROWS',
+      values: [PROJECT_META_HEADER],
+    })
 
     const res = await fetch(
       `${this.base(sheetId)}/values:batchUpdate`,
@@ -388,6 +400,65 @@ export class GoogleSheetsService implements DataService {
     const r = this.summaryRowFor(project, ep, stats)
     if (!r) return
     await this.apiPut(project.sheetId, `Summary!A${r.row}:L${r.row}`, [r.values])
+  }
+
+  // ─── Project meta (_meta tab) ─────────────────────────────────────
+
+  async ensureMetaTab(project: ProjectConfig): Promise<void> {
+    try {
+      await this.getTabSheetId(project.sheetId, PROJECT_META_TAB)
+      return
+    } catch {
+      // fallthrough to create
+    }
+    const res = await fetch(`${this.base(project.sheetId)}:batchUpdate`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${this.token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{ addSheet: { properties: { title: PROJECT_META_TAB } } }],
+      }),
+    })
+    if (!res.ok) throw new Error(`Sheets API ${res.status}（建立 _meta tab 失敗）`)
+    await this.apiPut(
+      project.sheetId,
+      `${PROJECT_META_TAB}!A1:B1`,
+      [PROJECT_META_HEADER],
+    )
+  }
+
+  async fetchMeta(project: ProjectConfig): Promise<Record<string, string>> {
+    try {
+      const data = await this.apiGet<{ values?: string[][] }>(
+        project.sheetId,
+        `${PROJECT_META_TAB}!A2:B`,
+      )
+      const out: Record<string, string> = {}
+      for (const row of data.values ?? []) {
+        if (row[0]) out[row[0]] = row[1] ?? ''
+      }
+      return out
+    } catch {
+      return {}
+    }
+  }
+
+  async setMeta(project: ProjectConfig, key: string, value: string): Promise<void> {
+    await this.ensureMetaTab(project)
+    const data = await this.apiGet<{ values?: string[][] }>(
+      project.sheetId,
+      `${PROJECT_META_TAB}!A2:B`,
+    )
+    const rows = data.values ?? []
+    const idx = rows.findIndex(r => r[0] === key)
+    if (idx >= 0) {
+      await this.apiPut(
+        project.sheetId,
+        `${PROJECT_META_TAB}!A${idx + 2}:B${idx + 2}`,
+        [[key, value]],
+      )
+    } else {
+      await this.apiAppend(project.sheetId, `${PROJECT_META_TAB}!A:B`, [[key, value]])
+    }
   }
 
   async batchUpdateSummary(
