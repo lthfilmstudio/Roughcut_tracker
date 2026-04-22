@@ -219,7 +219,7 @@ export default function App() {
   }
 
   const exitFn = adminEntered ? handleReturnToAdmin : handleLogout
-  const exitLabel = adminEntered ? '← 返回總覽' : '登出'
+  const exitLabel = adminEntered ? '← 返回' : '登出'
 
   if (view.page === 'quick') {
     return (
@@ -227,7 +227,7 @@ export default function App() {
         token={accessToken}
         cache={cache}
         onExit={isFilm ? exitFn : () => setView({ page: 'dashboard' })}
-        exitLabel={isFilm ? exitLabel : '← 返回總覽'}
+        exitLabel={isFilm ? exitLabel : '← 返回'}
       />
     )
   }
@@ -241,7 +241,7 @@ export default function App() {
         onNavigate={(ep) => setView({ page: 'episode', ep })}
         onOpenQuick={() => setView({ page: 'quick' })}
         onBack={isFilm ? exitFn : () => setView({ page: 'dashboard' })}
-        backLabel={isFilm ? exitLabel : '← 返回總覽'}
+        backLabel={isFilm ? exitLabel : '← 返回'}
       />
     )
   }

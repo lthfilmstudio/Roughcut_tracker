@@ -146,7 +146,7 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
   return (
     <div style={s.page}>
       <nav style={s.nav} className="no-print rt-nav">
-        <div style={s.navInner}>
+        <div style={s.navInner} className="rt-nav-inner">
           <div style={s.navTitleBox}>
             <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
             <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
@@ -177,23 +177,19 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
               <span style={s.quickBannerArrow}>→</span>
             </button>
 
-            {/* 全劇長度總覽（初剪原始總長 + 精剪總長，各集加總） */}
+            {/* 全劇長度總覽（初剪總長 + 精剪總長，各集加總） */}
             <div style={s.lengthBar} className="no-print">
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>全劇初剪原始總長</span>
-                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+              <div style={s.lengthCell}>
+                <span style={s.lengthLabel}>全劇初剪總長</span>
+                <span style={s.lengthValue}>
                   {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}
                 </span>
               </div>
-              <div style={s.lengthSep} />
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>全劇精剪總長</span>
-                <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+              <div style={s.lengthCell}>
+                <span style={s.lengthLabel}>全劇精剪總長</span>
+                <span style={s.lengthValue}>
                   {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}
                 </span>
-              </div>
-              <div style={{ marginLeft: 'auto', fontSize: 11, color: '#555' }}>
-                各集精剪總長請進入該集編輯
               </div>
             </div>
 
@@ -628,11 +624,13 @@ const s: Record<string, React.CSSProperties> = {
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
   lengthBar: {
-    display: 'flex', alignItems: 'center', gap: 24,
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
     background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
     padding: '14px 20px', marginBottom: 16,
   },
-  lengthSep: { width: 1, alignSelf: 'stretch', background: '#2A2A2A' },
+  lengthCell: { display: 'flex', flexDirection: 'column', gap: 4 },
+  lengthLabel: { fontSize: 11, color: 'var(--text-secondary)' },
+  lengthValue: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {

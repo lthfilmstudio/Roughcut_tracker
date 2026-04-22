@@ -46,7 +46,7 @@ export default function FinecutTotalInline({ value, onSave, label = '精剪總�
 
   if (editing) {
     return (
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
         <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{label}</span>
         <input
           ref={inputRef}
@@ -69,7 +69,10 @@ export default function FinecutTotalInline({ value, onSave, label = '精剪總�
             fontSize,
             fontWeight: 700,
             lineHeight: 1,
-            width: 150,
+            width: '100%',
+            maxWidth: 180,
+            minWidth: 0,
+            boxSizing: 'border-box',
             fontFamily: 'inherit',
           }}
         />
@@ -79,7 +82,7 @@ export default function FinecutTotalInline({ value, onSave, label = '精剪總�
   }
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
       <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{label}</span>
       <button
         onClick={() => { setDraft(value); setEditing(true) }}
@@ -97,6 +100,7 @@ export default function FinecutTotalInline({ value, onSave, label = '精剪總�
           alignItems: 'center',
           gap: 6,
           fontFamily: 'inherit',
+          minWidth: 0,
         }}
         title="點擊編輯"
       >

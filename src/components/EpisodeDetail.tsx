@@ -198,11 +198,11 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
     <div style={s.page}>
       {/* Nav */}
       <nav style={s.nav} className="no-print rt-nav">
-        <div style={s.navInner}>
+        <div style={s.navInner} className="rt-nav-inner">
           {IS_FILM ? (
             <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
           ) : (
-            <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回總覽'}</button>
+            <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回'}</button>
           )}
           <div style={s.navTitleBox}>
             <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
@@ -231,21 +231,23 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
         </div>
       )}
 
-      {/* 長度總覽（初剪原始總長 + 精剪總長 inline 編輯） */}
+      {/* 長度總覽（初剪總長 + 精剪總長 inline 編輯） */}
       {!loading && !error && (
         <div style={s.lengthBarWrap} className="no-print rt-length-bar-wrap">
           <div style={s.lengthBar}>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-              <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>初剪原始總長</span>
-              <span style={{ fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 }}>
+            <div style={s.lengthCell}>
+              <span style={s.lengthLabel}>初剪總長</span>
+              <span style={s.lengthValue}>
                 {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
               </span>
             </div>
-            <div style={s.lengthSep} />
-            <FinecutTotalInline
-              value={finecutTotalRaw}
-              onSave={handleSaveFinecutTotal}
-            />
+            <div style={s.lengthCell}>
+              <FinecutTotalInline
+                value={finecutTotalRaw}
+                onSave={handleSaveFinecutTotal}
+                label="精剪總長"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -489,11 +491,13 @@ const s: Record<string, React.CSSProperties> = {
   quickBannerWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
   lengthBarWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
   lengthBar: {
-    display: 'flex', alignItems: 'center', gap: 24,
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
     background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
     padding: '14px 20px',
   },
-  lengthSep: { width: 1, alignSelf: 'stretch', background: '#2A2A2A' },
+  lengthCell: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 },
+  lengthLabel: { fontSize: 11, color: 'var(--text-secondary)' },
+  lengthValue: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 },
   quickBanner: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: '100%', padding: '14px 18px',

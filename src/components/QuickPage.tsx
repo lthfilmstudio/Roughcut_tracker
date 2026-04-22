@@ -35,7 +35,7 @@ interface Props {
   exitLabel?: string
 }
 
-export default function QuickPage({ token, cache, onExit, exitLabel = '← 返回總覽' }: Props) {
+export default function QuickPage({ token, cache, onExit, exitLabel = '← 返回' }: Props) {
   const { project } = useProject()
   const episodes = useMemo(() => getTabNames(project), [project])
   const isFilm = project.type === 'film'

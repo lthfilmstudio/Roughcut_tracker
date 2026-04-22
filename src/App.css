@@ -16,8 +16,8 @@
     padding: 12px 12px 0 !important;
   }
 
-  .rt-nav {
-    padding: 12px 16px !important;
+  .rt-nav-inner {
+    padding: 10px 14px !important;
   }
 
   .rt-nav-title {
@@ -26,6 +26,10 @@
 
   .rt-nav-sub {
     font-size: 10px !important;
+  }
+
+  .rt-length-bar-wrap {
+    padding: 12px 12px 0 !important;
   }
 
   .rt-tabbar {
