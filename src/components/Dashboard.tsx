@@ -178,18 +178,18 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
             </button>
 
             {/* 全劇長度總覽（初剪總長 + 精剪總長，各集加總） */}
-            <div style={s.lengthBar} className="no-print">
-              <div style={s.lengthCell}>
-                <span style={s.lengthLabel}>全劇初剪總長</span>
-                <span style={s.lengthValue}>
+            <div style={s.lengthGrid} className="no-print rt-length-grid">
+              <div style={s.statCard}>
+                <p style={s.statLabel}>全劇初剪總長</p>
+                <p style={s.statValue}>
                   {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}
-                </span>
+                </p>
               </div>
-              <div style={s.lengthCell}>
-                <span style={s.lengthLabel}>全劇精剪總長</span>
-                <span style={s.lengthValue}>
+              <div style={s.statCard}>
+                <p style={s.statLabel}>全劇精剪總長</p>
+                <p style={s.statValue}>
                   {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}
-                </span>
+                </p>
               </div>
             </div>
 
@@ -623,14 +623,10 @@ const s: Record<string, React.CSSProperties> = {
     display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2,
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
-  lengthBar: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
-    background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
-    padding: '14px 20px', marginBottom: 16,
+  lengthGrid: {
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16,
+    alignItems: 'stretch',
   },
-  lengthCell: { display: 'flex', flexDirection: 'column', gap: 4 },
-  lengthLabel: { fontSize: 11, color: 'var(--text-secondary)' },
-  lengthValue: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {

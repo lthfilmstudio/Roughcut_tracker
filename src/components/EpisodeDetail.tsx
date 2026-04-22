@@ -234,14 +234,14 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
       {/* 長度總覽（初剪總長 + 精剪總長 inline 編輯） */}
       {!loading && !error && (
         <div style={s.lengthBarWrap} className="no-print rt-length-bar-wrap">
-          <div style={s.lengthBar}>
-            <div style={s.lengthCell}>
-              <span style={s.lengthLabel}>初剪總長</span>
-              <span style={s.lengthValue}>
+          <div style={s.lengthGrid} className="rt-length-grid">
+            <div style={s.statCard}>
+              <p style={s.statLabel}>初剪總長</p>
+              <p style={s.statValue}>
                 {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
-              </span>
+              </p>
             </div>
-            <div style={s.lengthCell}>
+            <div style={s.statCard}>
               <FinecutTotalInline
                 value={finecutTotalRaw}
                 onSave={handleSaveFinecutTotal}
@@ -490,14 +490,10 @@ const s: Record<string, React.CSSProperties> = {
   main: { padding: '20px 40px', maxWidth: 1400, margin: '0 auto' },
   quickBannerWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
   lengthBarWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
-  lengthBar: {
+  lengthGrid: {
     display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
-    background: '#1C1C1C', border: '1px solid #2A2A2A', borderRadius: 6,
-    padding: '14px 20px',
+    alignItems: 'stretch',
   },
-  lengthCell: { display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 },
-  lengthLabel: { fontSize: 11, color: 'var(--text-secondary)' },
-  lengthValue: { fontSize: 20, fontWeight: 700, color: 'var(--text-primary)', lineHeight: 1 },
   quickBanner: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: '100%', padding: '14px 18px',

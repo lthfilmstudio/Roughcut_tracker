@@ -32,6 +32,10 @@
     padding: 12px 12px 0 !important;
   }
 
+  .rt-length-grid {
+    gap: 8px !important;
+  }
+
   .rt-tabbar {
     padding: 6px 12px !important;
   }
