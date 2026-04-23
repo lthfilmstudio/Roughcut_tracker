@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { SceneRow } from '../types'
-import { formatRoughcutLength, formatDate, normalizeScene, todayYMD, computeEpisodeStats, parseSecs, secsToHMS, finecutMetaKey } from '../lib/stats'
+import { formatRoughcutLength, formatDate, normalizeScene, autoFillRoughcutStatus, todayYMD, computeEpisodeStats, parseSecs, secsToHMS, finecutMetaKey } from '../lib/stats'
 import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
 import { getDataService } from '../services'
 import { useProject } from '../contexts/ProjectContext'
@@ -79,7 +79,8 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
     setSaving(true)
     try {
       const svc = getDataService(token)
-      const cleaned = normalizeScene(scene)
+      const prev = cache.scenes?.[currentEp]?.[rowIndex]
+      const cleaned = normalizeScene(autoFillRoughcutStatus(scene, prev))
       await svc.updateScene(project, currentEp, rowIndex, cleaned)
       const currentList = cache.scenes?.[currentEp] ?? []
       const replaced = currentList.map((r, i) => i === rowIndex ? cleaned : r)
@@ -104,7 +105,7 @@ export default function QuickPage({ token, cache, onExit, exitLabel = '← 返�
     setSaving(true)
     try {
       const svc = getDataService(token)
-      const cleaned = normalizeScene(scene)
+      const cleaned = normalizeScene(autoFillRoughcutStatus(scene))
       await svc.appendScene(project, currentEp, cleaned)
       const currentList = cache.scenes?.[currentEp] ?? []
       const appended = [...currentList, cleaned]

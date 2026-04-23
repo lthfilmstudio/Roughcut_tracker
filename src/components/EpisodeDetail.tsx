@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import { getDataService } from '../services'
 import type { SceneRow } from '../types'
 import {
-  secsToHMS, normalizeScene, computeEpisodeStats,
+  secsToHMS, normalizeScene, autoFillRoughcutStatus, computeEpisodeStats,
   finecutMetaKey,
 } from '../lib/stats'
 import { sortScenes, scenesOrderChanged } from '../lib/sceneSort'
@@ -71,7 +71,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
     setSaving(true)
     try {
       const svc = getDataService(token)
-      const cleaned = normalizeScene(draft)
+      const cleaned = normalizeScene(autoFillRoughcutStatus(draft, scenes[i]))
       await svc.updateScene(project, episode, i, cleaned)
       const replaced = scenes.map((r, idx) => idx === i ? cleaned : r)
       const sorted = sortScenes(replaced)
@@ -93,7 +93,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
     setSaving(true)
     try {
       const svc = getDataService(token)
-      const cleaned = normalizeScene(scene)
+      const cleaned = normalizeScene(autoFillRoughcutStatus(scene))
       await svc.appendScene(project, episode, cleaned)
       const appended = [...scenes, cleaned]
       const sorted = sortScenes(appended)

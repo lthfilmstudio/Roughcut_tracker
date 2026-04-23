@@ -78,6 +78,19 @@ export function normalizeScene(row: SceneRow): SceneRow {
   }
 }
 
+// 場次第一次登記初剪長度時，自動填狀態為「已初剪」。
+// 只在舊狀態為空、draft 狀態也空、長度非空三個條件都成立才觸發，
+// 使用者刻意清空狀態或原本已有狀態都不會被蓋掉。
+export function autoFillRoughcutStatus(draft: SceneRow, prev?: SceneRow): SceneRow {
+  const prevStatusEmpty = !prev?.status?.trim()
+  const draftStatusEmpty = !draft.status?.trim()
+  const hasLength = !!draft.roughcutLength?.trim()
+  if (prevStatusEmpty && draftStatusEmpty && hasLength) {
+    return { ...draft, status: '已初剪' }
+  }
+  return draft
+}
+
 export interface EpisodeStats {
   totalScenes: number     // 全部場次（含整場刪除）
   validScenes: number     // 排除整場刪除的場次
