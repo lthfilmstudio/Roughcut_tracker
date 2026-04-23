@@ -214,26 +214,22 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
               </thead>
               <tbody>
                 <tr>
-                  <td>已初剪</td>
-                  <td>{secsToHMS(totals.roughcutSecs)}</td>
-                  <td>{totals.roughcutScenes} / {totals.validScenes}</td>
-                  <td>{(globalRoughcutPct * 100).toFixed(1)}%</td>
+                  <td>全劇初剪總長</td>
+                  <td>{totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
                 </tr>
                 <tr>
-                  <td>已精剪</td>
-                  <td>{secsToHMS(totals.finecutSecs)}</td>
-                  <td>{totals.finecutScenes} / {totals.validScenes}</td>
-                  <td>{(globalFinecutPct * 100).toFixed(1)}%</td>
+                  <td>全劇精剪總長</td>
+                  <td>{totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
                 </tr>
                 <tr>
                   <td>總計</td>
-                  <td>{secsToHMS(totals.roughcutSecs + totals.finecutSecs)}</td>
+                  <td>—</td>
                   <td>{totals.roughcutScenes + totals.finecutScenes} / {totals.validScenes}</td>
                   <td>{totals.validScenes > 0 ? (((totals.roughcutScenes + totals.finecutScenes) / totals.validScenes) * 100).toFixed(1) : '0.0'}%</td>
-                </tr>
-                <tr>
-                  <td>初剪原始總長</td>
-                  <td colSpan={3}>{totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}　・　全劇精剪總長 {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}</td>
                 </tr>
                 <tr>
                   <td>初剪頁數</td>
@@ -244,33 +240,26 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
 
             {/* 統計卡片 */}
             <div style={s.statGrid} className="stat-grid-screen">
-              {[
-                { label: '已初剪', secs: totals.roughcutSecs, pct: globalRoughcutPct, count: totals.roughcutScenes, color: '#FFC107' },
-                { label: '已精剪', secs: totals.finecutSecs, pct: globalFinecutPct, count: totals.finecutScenes, color: '#4CAF50' },
-                {
-                  label: '總計',
-                  secs: totals.roughcutSecs + totals.finecutSecs,
-                  pct: totals.validScenes > 0 ? (totals.roughcutScenes + totals.finecutScenes) / totals.validScenes : 0,
-                  count: totals.roughcutScenes + totals.finecutScenes,
-                  color: '#E5E5E5',
-                },
-              ].map(c => (
-                <div key={c.label} style={s.statCard}>
-                  <p style={s.statLabel}>{c.label}</p>
-                  <div style={s.statRow}>
-                    <p style={s.statValue}>{secsToHMS(c.secs)}</p>
-                    <div style={s.statRight}>
-                      <p style={s.statPct}>{Math.round(c.pct * 100)}%</p>
-                      <div style={s.statBarRow}>
-                        <div style={s.barTrack}>
-                          <div style={{ ...s.barFill, width: `${Math.min(c.pct * 100, 100)}%`, background: c.color }} />
+              {(() => {
+                const combinedPct = totals.validScenes > 0 ? (totals.roughcutScenes + totals.finecutScenes) / totals.validScenes : 0
+                const combinedCount = totals.roughcutScenes + totals.finecutScenes
+                return (
+                  <div style={s.statCard}>
+                    <p style={s.statLabel}>總計</p>
+                    <div style={s.statRow}>
+                      <p style={s.statValue}>{Math.round(combinedPct * 100)}%</p>
+                      <div style={s.statRight}>
+                        <div style={s.statBarRow}>
+                          <div style={s.barTrack}>
+                            <div style={{ ...s.barFill, width: `${Math.min(combinedPct * 100, 100)}%`, background: '#E5E5E5' }} />
+                          </div>
+                          <span style={s.statSubValue}>{combinedCount} / {totals.validScenes} 場</span>
                         </div>
-                        <span style={s.statSubValue}>{c.count} / {totals.validScenes} 場</span>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })()}
               <div style={s.statCard}>
                 <p style={s.statLabel}>初剪頁數</p>
                 <div style={s.statRow}>
@@ -580,7 +569,7 @@ const s: Record<string, React.CSSProperties> = {
   main: { padding: '24px 40px', maxWidth: 1400, margin: '0 auto' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 80 },
   statGrid: {
-    display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20,
+    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20,
     alignItems: 'stretch',
   },
   statCard: {

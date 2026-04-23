@@ -184,7 +184,6 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
   const printDate = new Date().toLocaleDateString('zh-TW', {
     timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit',
   })
-  const totalSecs = stats.roughcutSecs + stats.finecutSecs
   const combinedPct = stats.validScenes > 0 ? (stats.roughcutScenes + stats.finecutScenes) / stats.validScenes : 0
 
   const finecutKey = finecutMetaKey(episode)
@@ -303,20 +302,20 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
               </thead>
               <tbody>
                 <tr>
-                  <td>已初剪</td>
-                  <td>{secsToHMS(stats.roughcutSecs)}</td>
-                  <td>{stats.roughcutScenes} / {stats.validScenes}</td>
-                  <td>{(stats.roughcutPct * 100).toFixed(1)}%</td>
+                  <td>初剪總長</td>
+                  <td>{stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
                 </tr>
                 <tr>
-                  <td>已精剪</td>
-                  <td>{secsToHMS(stats.finecutSecs)}</td>
-                  <td>{stats.finecutScenes} / {stats.validScenes}</td>
-                  <td>{(stats.finecutPct * 100).toFixed(1)}%</td>
+                  <td>精剪總長</td>
+                  <td>{finecutTotalRaw || '—'}</td>
+                  <td>—</td>
+                  <td>—</td>
                 </tr>
                 <tr>
                   <td>總計</td>
-                  <td>{secsToHMS(totalSecs)}</td>
+                  <td>—</td>
                   <td>{stats.roughcutScenes + stats.finecutScenes} / {stats.validScenes}</td>
                   <td>{(combinedPct * 100).toFixed(1)}%</td>
                 </tr>
@@ -330,33 +329,20 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
             {/* 統計卡片（僅劇集模式） */}
             {!IS_FILM && (
               <div style={s.statGrid} className="stat-grid-screen">
-                {[
-                  { label: '已初剪', secs: stats.roughcutSecs, pct: stats.roughcutPct, count: stats.roughcutScenes, color: '#FFC107' },
-                  { label: '已精剪', secs: stats.finecutSecs, pct: stats.finecutPct, count: stats.finecutScenes, color: '#4CAF50' },
-                  {
-                    label: '總計',
-                    secs: stats.roughcutSecs + stats.finecutSecs,
-                    pct: combinedPct,
-                    count: stats.roughcutScenes + stats.finecutScenes,
-                    color: '#E5E5E5',
-                  },
-                ].map(c => (
-                  <div key={c.label} style={s.statCard}>
-                    <p style={s.statLabel}>{c.label}</p>
-                    <div style={s.statRow}>
-                      <p style={s.statValue}>{secsToHMS(c.secs)}</p>
-                      <div style={s.statRight}>
-                        <p style={s.statPct}>{Math.round(c.pct * 100)}%</p>
-                        <div style={s.statBarRow}>
-                          <div style={s.barTrack}>
-                            <div style={{ ...s.barFill, width: `${Math.min(c.pct * 100, 100)}%`, background: c.color }} />
-                          </div>
-                          <span style={s.statSubValue}>{c.count} / {stats.validScenes} 場</span>
+                <div style={s.statCard}>
+                  <p style={s.statLabel}>總計</p>
+                  <div style={s.statRow}>
+                    <p style={s.statValue}>{Math.round(combinedPct * 100)}%</p>
+                    <div style={s.statRight}>
+                      <div style={s.statBarRow}>
+                        <div style={s.barTrack}>
+                          <div style={{ ...s.barFill, width: `${Math.min(combinedPct * 100, 100)}%`, background: '#E5E5E5' }} />
                         </div>
+                        <span style={s.statSubValue}>{stats.roughcutScenes + stats.finecutScenes} / {stats.validScenes} 場</span>
                       </div>
                     </div>
                   </div>
-                ))}
+                </div>
                 <div style={s.statCard}>
                   <p style={s.statLabel}>總頁數</p>
                   <div style={s.statRow}>
@@ -513,7 +499,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 60 },
-  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 16, alignItems: 'stretch' },
+  statGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, alignItems: 'stretch' },
   statCard: {
     background: '#1C1C1C', border: '1px solid #2A2A2A',
     borderRadius: 4, padding: '14px 18px',
