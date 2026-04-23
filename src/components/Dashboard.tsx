@@ -177,22 +177,6 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
               <span style={s.quickBannerArrow}>→</span>
             </button>
 
-            {/* 全劇長度總覽（初剪總長 + 精剪總長，各集加總） */}
-            <div style={s.lengthGrid} className="no-print rt-length-grid">
-              <div style={s.statCard}>
-                <p style={s.statLabel}>全劇初剪總長</p>
-                <p style={s.statValue}>
-                  {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}
-                </p>
-              </div>
-              <div style={s.statCard}>
-                <p style={s.statLabel}>全劇精剪總長</p>
-                <p style={s.statValue}>
-                  {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}
-                </p>
-              </div>
-            </div>
-
             {/* 列印頁首 */}
             <div className="print-only print-header">
               <div className="print-header-row1">
@@ -238,8 +222,20 @@ export default function Dashboard({ cache, onSelectEpisode, onOpenQuick, onLogou
               </tbody>
             </table>
 
-            {/* 統計卡片 */}
+            {/* 統計卡片（4 張一排） */}
             <div style={s.statGrid} className="stat-grid-screen">
+              <div style={s.statCard}>
+                <p style={s.statLabel}>全劇初剪總長</p>
+                <p style={s.statValue}>
+                  {totals.roughcutTotalSecs > 0 ? secsToHMS(totals.roughcutTotalSecs) : '—'}
+                </p>
+              </div>
+              <div style={s.statCard}>
+                <p style={s.statLabel}>全劇精剪總長</p>
+                <p style={s.statValue}>
+                  {totals.finecutTotalSecs > 0 ? secsToHMS(totals.finecutTotalSecs) : '—'}
+                </p>
+              </div>
               {(() => {
                 const combinedPct = totals.validScenes > 0 ? (totals.roughcutScenes + totals.finecutScenes) / totals.validScenes : 0
                 const combinedCount = totals.roughcutScenes + totals.finecutScenes
@@ -569,7 +565,7 @@ const s: Record<string, React.CSSProperties> = {
   main: { padding: '24px 40px', maxWidth: 1400, margin: '0 auto' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 80 },
   statGrid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 20,
+    display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 20,
     alignItems: 'stretch',
   },
   statCard: {
@@ -612,10 +608,6 @@ const s: Record<string, React.CSSProperties> = {
     display: 'block', fontSize: 12, color: 'var(--text-secondary)', marginTop: 2,
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
-  lengthGrid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16,
-    alignItems: 'stretch',
-  },
   tableWrap: { overflowX: 'auto' },
   table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
   th: {

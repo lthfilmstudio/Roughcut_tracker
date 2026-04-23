@@ -13,7 +13,6 @@ import ExportCSV from './ExportCSV'
 import ErrorView from './ErrorView'
 import ExportPDFModal from './ExportPDFModal'
 import SceneTable, { EP_COL_DEFS, EP_PDF_FIELDS, EP_PDF_DEFAULTS } from './SceneTable'
-import SummaryBar from './SummaryBar'
 import FinecutTotalInline from './FinecutTotalInline'
 import { STUDIO_NAME } from '../config/sheets'
 import { getTabNames, projectTitle, hasSummaryTab } from '../config/projectConfig'
@@ -198,11 +197,7 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
       {/* Nav */}
       <nav style={s.nav} className="no-print rt-nav">
         <div style={s.navInner} className="rt-nav-inner">
-          {IS_FILM ? (
-            <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? '登出'}</button>
-          ) : (
-            <button style={s.backBtn} onClick={onBack}>{backLabel ?? '← 返回'}</button>
-          )}
+          <button style={s.logoutBtn} onClick={onBack}>{backLabel ?? (IS_FILM ? '登出' : '← 返回')}</button>
           <div style={s.navTitleBox}>
             <span style={s.navTitle} className="rt-nav-title">Roughcut Tracker</span>
             <span style={s.navSub} className="rt-nav-sub">{projectTitle(project)}</span>
@@ -230,27 +225,6 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
         </div>
       )}
 
-      {/* 長度總覽（初剪總長 + 精剪總長 inline 編輯） */}
-      {!loading && !error && (
-        <div style={s.lengthBarWrap} className="no-print rt-length-bar-wrap">
-          <div style={s.lengthGrid} className="rt-length-grid">
-            <div style={s.statCard}>
-              <p style={s.statLabel}>初剪總長</p>
-              <p style={s.statValue}>
-                {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
-              </p>
-            </div>
-            <div style={s.statCard}>
-              <FinecutTotalInline
-                value={finecutTotalRaw}
-                onSave={handleSaveFinecutTotal}
-                label="精剪總長"
-              />
-            </div>
-          </div>
-        </div>
-      )}
-
       {!IS_FILM && (
         <div style={s.tabBar} className="no-print rt-tabbar">
           <button style={s.scrollBtn} onClick={() => scrollTabs('left')}>‹</button>
@@ -267,10 +241,6 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
           </div>
           <button style={s.scrollBtn} onClick={() => scrollTabs('right')}>›</button>
         </div>
-      )}
-
-      {IS_FILM && !loading && !error && (
-        <SummaryBar stats={stats} />
       )}
 
       <main style={s.main} className="rt-main">
@@ -326,37 +296,48 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
               </tbody>
             </table>
 
-            {/* 統計卡片（僅劇集模式） */}
-            {!IS_FILM && (
-              <div style={s.statGrid} className="stat-grid-screen">
-                <div style={s.statCard}>
-                  <p style={s.statLabel}>總計</p>
-                  <div style={s.statRow}>
-                    <p style={s.statValue}>{Math.round(combinedPct * 100)}%</p>
-                    <div style={s.statRight}>
-                      <div style={s.statBarRow}>
-                        <div style={s.barTrack}>
-                          <div style={{ ...s.barFill, width: `${Math.min(combinedPct * 100, 100)}%`, background: '#E5E5E5' }} />
-                        </div>
-                        <span style={s.statSubValue}>{stats.roughcutScenes + stats.finecutScenes} / {stats.validScenes} 場</span>
+            {/* 統計卡片（4 張一排，電影/劇集共用） */}
+            <div style={s.statGrid} className="stat-grid-screen">
+              <div style={s.statCard}>
+                <p style={s.statLabel}>初剪總長</p>
+                <p style={s.statValue}>
+                  {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
+                </p>
+              </div>
+              <div style={s.statCard}>
+                <FinecutTotalInline
+                  value={finecutTotalRaw}
+                  onSave={handleSaveFinecutTotal}
+                  label="精剪總長"
+                />
+              </div>
+              <div style={s.statCard}>
+                <p style={s.statLabel}>總計</p>
+                <div style={s.statRow}>
+                  <p style={s.statValue}>{Math.round(combinedPct * 100)}%</p>
+                  <div style={s.statRight}>
+                    <div style={s.statBarRow}>
+                      <div style={s.barTrack}>
+                        <div style={{ ...s.barFill, width: `${Math.min(combinedPct * 100, 100)}%`, background: '#E5E5E5' }} />
                       </div>
-                    </div>
-                  </div>
-                </div>
-                <div style={s.statCard}>
-                  <p style={s.statLabel}>總頁數</p>
-                  <div style={s.statRow}>
-                    <p style={s.statValue}>
-                      {stats.totalPages.toFixed(1)}
-                      <span style={s.statUnit}>頁</span>
-                    </p>
-                    <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
-                      <span style={s.statSubValue}>{stats.validScenes} 場（不含整場刪除）</span>
+                      <span style={s.statSubValue}>{stats.roughcutScenes + stats.finecutScenes} / {stats.validScenes} 場</span>
                     </div>
                   </div>
                 </div>
               </div>
-            )}
+              <div style={s.statCard}>
+                <p style={s.statLabel}>總頁數</p>
+                <div style={s.statRow}>
+                  <p style={s.statValue}>
+                    {stats.totalPages.toFixed(1)}
+                    <span style={s.statUnit}>頁</span>
+                  </p>
+                  <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
+                    <span style={s.statSubValue}>{stats.validScenes} 場（不含整場刪除）</span>
+                  </div>
+                </div>
+              </div>
+            </div>
 
             <SceneTable
               resetKey={episode}
@@ -443,11 +424,6 @@ const s: Record<string, React.CSSProperties> = {
   },
   navTitle: { fontSize: 14, fontWeight: 500, color: 'var(--text-primary)', lineHeight: '1.4' },
   navSub: { fontSize: 11, color: '#666666', lineHeight: '1.4' },
-  backBtn: {
-    padding: '5px 12px', background: 'transparent', color: '#555',
-    border: '1px solid #333', borderRadius: 4, whiteSpace: 'nowrap', flexShrink: 0,
-    fontSize: 12,
-  },
   logoutBtn: {
     padding: '7px 16px', background: 'transparent', color: 'var(--text-secondary)',
     border: '1px solid var(--border)', borderRadius: 6, whiteSpace: 'nowrap', flexShrink: 0,
@@ -475,11 +451,6 @@ const s: Record<string, React.CSSProperties> = {
   },
   main: { padding: '20px 40px', maxWidth: 1400, margin: '0 auto' },
   quickBannerWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
-  lengthBarWrap: { padding: '12px 40px 0', maxWidth: 1400, margin: '0 auto', width: '100%', boxSizing: 'border-box' },
-  lengthGrid: {
-    display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12,
-    alignItems: 'stretch',
-  },
   quickBanner: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
     width: '100%', padding: '14px 18px',
@@ -499,7 +470,7 @@ const s: Record<string, React.CSSProperties> = {
   },
   quickBannerArrow: { fontSize: 18, color: '#FFC107' },
   msg: { color: 'var(--text-secondary)', textAlign: 'center', marginTop: 60 },
-  statGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 16, alignItems: 'stretch' },
+  statGrid: { display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 12, marginBottom: 16, alignItems: 'stretch' },
   statCard: {
     background: '#1C1C1C', border: '1px solid #2A2A2A',
     borderRadius: 4, padding: '14px 18px',

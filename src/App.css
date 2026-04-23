@@ -28,20 +28,8 @@
     font-size: 10px !important;
   }
 
-  .rt-length-bar-wrap {
-    padding: 12px 12px 0 !important;
-  }
-
-  .rt-length-grid {
-    gap: 8px !important;
-  }
-
   .rt-tabbar {
     padding: 6px 12px !important;
-  }
-
-  .rt-summary-sticky {
-    padding: 10px 12px !important;
   }
 
   /* 工具列在手機用橫向 scroll 不換行 */
