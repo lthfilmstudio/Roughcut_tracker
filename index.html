@@ -2,20 +2,38 @@
 <html lang="zh-Hant">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>原本那間 · 剪輯進度</title>
-
-    <link rel="manifest" href="./manifest.webmanifest" />
+    <meta http-equiv="refresh" content="3; url=https://tracker.lthfilmstudio.com/" />
+    <title>原本那間 · 已搬家</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="theme-color" content="#0F0F0F" />
-    <link rel="apple-touch-icon" href="./icons/apple-touch-icon.png" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="原本那間" />
-    <meta name="mobile-web-app-capable" content="yes" />
+    <style>
+      html, body { margin: 0; padding: 0; background: #0F0F0F; color: #F5F5F5; font-family: -apple-system, BlinkMacSystemFont, "PingFang TC", "Noto Sans TC", sans-serif; }
+      .wrap { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+      .card { max-width: 480px; text-align: center; }
+      h1 { font-size: 28px; margin: 0 0 12px; color: #FFC107; }
+      p { font-size: 16px; line-height: 1.6; margin: 8px 0; color: #CFCFCF; }
+      a { color: #FFC107; font-weight: 600; text-decoration: none; border-bottom: 1px solid #FFC107; }
+      a:hover { opacity: 0.8; }
+      .small { font-size: 13px; color: #888; margin-top: 20px; }
+    </style>
+    <script>
+      setTimeout(function () {
+        window.location.replace('https://tracker.lthfilmstudio.com/');
+      }, 2500);
+    </script>
+    <!-- Vite build 仍會產 script，但 meta refresh + JS 會先跳走 -->
+    <script type="module" src="/src/main.tsx"></script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <div class="wrap">
+      <div class="card">
+        <h1>原本那間 · 已搬新家</h1>
+        <p>Roughcut Tracker 已搬到新網址：</p>
+        <p><a href="https://tracker.lthfilmstudio.com/">tracker.lthfilmstudio.com</a></p>
+        <p class="small">3 秒後自動導向。請更新你的書籤。</p>
+      </div>
+    </div>
+    <div id="root" style="display:none"></div>
   </body>
 </html>
