@@ -6,9 +6,10 @@ interface Props {
   onSave: (next: string) => Promise<void> | void
   label?: string
   fontSize?: number
+  subValue?: string
 }
 
-export default function FinecutTotalInline({ value, onSave, label = '精剪總長', fontSize = 20 }: Props) {
+export default function FinecutTotalInline({ value, onSave, label = '精剪總長', fontSize = 20, subValue }: Props) {
   const [editing, setEditing] = useState(false)
   const [draft, setDraft] = useState('')
   const [saving, setSaving] = useState(false)
@@ -84,29 +85,36 @@ export default function FinecutTotalInline({ value, onSave, label = '精剪總�
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0, width: '100%' }}>
       <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{label}</span>
-      <button
-        onClick={() => { setDraft(value); setEditing(true) }}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          padding: 0,
-          color: 'var(--text-primary)',
-          fontSize,
-          fontWeight: 700,
-          lineHeight: 1,
-          cursor: 'pointer',
-          textAlign: 'left',
-          display: 'inline-flex',
-          alignItems: 'center',
-          gap: 6,
-          fontFamily: 'inherit',
-          minWidth: 0,
-        }}
-        title="點擊編輯"
-      >
-        <span>{display}</span>
-        <span style={{ fontSize: 12, color: '#666' }}>✏️</span>
-      </button>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 12, minWidth: 0 }}>
+        <button
+          onClick={() => { setDraft(value); setEditing(true) }}
+          style={{
+            background: 'transparent',
+            border: 'none',
+            padding: 0,
+            color: 'var(--text-primary)',
+            fontSize,
+            fontWeight: 700,
+            lineHeight: 1,
+            cursor: 'pointer',
+            textAlign: 'left',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            fontFamily: 'inherit',
+            minWidth: 0,
+          }}
+          title="點擊編輯"
+        >
+          <span>{display}</span>
+          <span style={{ fontSize: 12, color: '#666' }}>✏️</span>
+        </button>
+        {subValue && (
+          <span style={{ fontSize: 11, color: 'var(--text-secondary)', whiteSpace: 'nowrap', lineHeight: 1 }}>
+            {subValue}
+          </span>
+        )}
+      </div>
     </div>
   )
 }

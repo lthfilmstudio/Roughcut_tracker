@@ -300,15 +300,21 @@ export default function EpisodeDetail({ episode, token, cache, onNavigate, onOpe
             <div style={s.statGrid} className="stat-grid-screen">
               <div style={s.statCard}>
                 <p style={s.statLabel}>初剪總長</p>
-                <p style={s.statValue}>
-                  {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
-                </p>
+                <div style={s.statRow}>
+                  <p style={s.statValue}>
+                    {stats.roughcutTotalSecs > 0 ? secsToHMS(stats.roughcutTotalSecs) : '—'}
+                  </p>
+                  <div style={{ ...s.statRight, justifyContent: 'flex-end' }}>
+                    <span style={s.statSubValue}>已初剪 {stats.roughcutScenes} / {stats.validScenes} 場</span>
+                  </div>
+                </div>
               </div>
               <div style={s.statCard}>
                 <FinecutTotalInline
                   value={finecutTotalRaw}
                   onSave={handleSaveFinecutTotal}
                   label="精剪總長"
+                  subValue={`已精剪 ${stats.finecutScenes} / ${stats.validScenes} 場`}
                 />
               </div>
               <div style={s.statCard}>
